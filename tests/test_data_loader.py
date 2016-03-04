@@ -1,16 +1,12 @@
 import unittest
 import pandas as pd
-from model.data_loader import *
+from model.make_mmlm2016_data_set import make_mmlm2016_data_set
+
 
 class TestDataLoader(unittest.TestCase):
 
-    def test_open_mmlm2016_data_files(self):
-        data_frames = open_mmlm2016_data_files()
-        self.assertIsInstance(data_frames, dict)
-        key = list(data_frames.keys())[0]
-        self.assertIsInstance(key, str)
-        print(type(data_frames[key]))
-        self.assertIsInstance(data_frames[key], pd.core.frame.DataFrame)
+    def test_make_mmlm2016_data_set(self):
+        make_mmlm2016_data_set()
 
 if __name__ == '__main__':
     unittest.main()
