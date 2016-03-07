@@ -26,14 +26,16 @@ def calculate_regular_season_win_ratio(regular_season):
 
 def make_dict_for_game(series):
     if random.random() < 0.5:
-        return {'team1': series['Wteam'],
-                'team2': series['Lteam'],
-                'result': 1}
+        return make_results_dict(series, 'Wteam', 'Lteam', 1)
     else:
-        return {'team1': series['Lteam'],
-                'team2': series['Wteam'],
-                'result': 0}
+        return make_results_dict(series, 'Lteam', 'Wteam', 0)
 
+def make_results_dict(series, team1, team2, result):
+    return{
+        'team1': series[team1],
+        'team2': series[team2],
+        'result': result
+    }
 
 def extract_games_from_regular_season(regular_season):
     random.seed(0)
