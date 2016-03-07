@@ -1,11 +1,6 @@
 import pandas as pd
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
 import random
-
-
-matplotlib.style.use('ggplot')
 
 
 def open_data_files(data_dir, file_names):
@@ -44,6 +39,7 @@ def calculate_regular_season_win_ratios(regular_season):
     w_team_counts = regular_season['Wteam'].value_counts().sort_index()
     l_team_counts = regular_season['Lteam'].value_counts().sort_index()
     w_team_ratios = w_team_counts / (w_team_counts + l_team_counts)
+    w_team_ratios.name = 'win_ratio'
     w_team_ratios = pd.DataFrame(w_team_ratios)
 
     validate_w_team_ratios(
@@ -78,6 +74,21 @@ def extract_games_from_regular_season(regular_season):
     return pd.DataFrame.from_dict(games)
 
 
+def merge_win_ratios_on_team(games, win_ratios, team):
+    wr_string = 'win_ratio_%s' % team
+    win_ratios[wr_string] = win_ratios['win_ratio']
+    return games.merge(win_ratios[[team, wr_string]], on=team, how='left')
+
+
+def join_games_and_win_ratios(games, win_ratios):
+    games = merge_win_ratios_on_team(games, win_ratios, 'team1')
+    games = merge_win_ratios_on_team(games, win_ratios, 'team2')
+
+    games['win_ratio_difference'] = (games['win_ratio_team1'] -
+                                     games['win_ratio_team2'])
+    return games
+
+
 def make_mmlm2016_data_set():
     project_dir = '~/Projects/Kaggle/'
     data_dir = project_dir + 'march-machine-learning-mania-2016-v1/'
@@ -95,15 +106,22 @@ def make_mmlm2016_data_set():
     regular_season = data_frames['regular_season_detailed_results']
     win_ratios = calculate_regular_season_win_ratios(regular_season)
     games = extract_games_from_regular_season(regular_season)
+    basic_data_set = join_games_and_win_ratios(games, win_ratios)
 
-    print(type(games))
-    print(games[0:2])
+    # basic_data_set.to_hdf(data_dir + 'basic_data_set.h5',
+    #                       'table', append=False)
 
-    print(type(win_ratios))
-    print(win_ratios[0:2])
+    basic_data_set.to_csv(data_dir + 'basic_data_set.csv',
+                          sep=',', index_label='index')
 
+    print('Basic Data Set example:')
+    print(type(basic_data_set))
+    print(basic_data_set[0:2])
+    print('Finished.')
+
+    # import matplotlib
+    # import matplotlib.pyplot as plt
+    # matplotlib.style.use('ggplot')
     # plt.figure()
     # regular_season_win_ratios[0:40].plot(kind='bar')
     # plt.show()
-
-    # [team_1, team_2, win_1_%, win_2_%, win_%_diff, result]
