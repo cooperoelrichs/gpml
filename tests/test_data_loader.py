@@ -1,5 +1,4 @@
 import unittest
-import pandas as pd
 from model.make_mmlm2016_data_set import make_mmlm2016_data_set
 
 
