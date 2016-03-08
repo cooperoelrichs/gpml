@@ -16,6 +16,8 @@ def make_mmlm2016_model():
     ].values
     y = basic_data_set['result'].values
 
+    # TODO Seperate out a 'final test' set from cv data
+
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.5, random_state=1)
 
@@ -35,6 +37,5 @@ def make_mmlm2016_model():
 
     print('LR Score: %0.2f' % score)
 
-    # TODO Seperate out a 'final test' set from cv data
     # submission = lr.predict_proba(X_submission)
     # save_submission(submission)

@@ -111,8 +111,6 @@ def make_mmlm2016_data_set():
     basic_data_set.to_hdf(data_dir + 'basic_data_set.h5',
                           key='table', append=False)
 
-    # basic_data_set.to_csv('~/Projects/Kaggle/march-machine-learning-mania-2016-v1/basic_data_set.csv', ',')
-
     print('Basic Data Set example:')
     print(type(basic_data_set))
     print(basic_data_set[0:2])
