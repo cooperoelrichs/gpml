@@ -99,7 +99,7 @@ def make_mmlm2016_data_set():
         'teams': 'Teams.csv',
         'tourney_detailed_results': 'TourneyDetailedResults.csv',
         'tourney_seeds': 'TourneySeeds.csv',
-        'tourney_ slots': 'TourneySlots.csv',
+        'tourney_slots': 'TourneySlots.csv',
     }
 
     data_frames = open_data_files(data_dir, file_names)
