@@ -90,7 +90,7 @@ def join_games_and_win_ratios(games, win_ratios):
 
 
 def make_mmlm2016_data_set():
-    project_dir = '~/Projects/Kaggle/'
+    project_dir = '/Users/cooperoelrichs/Projects/Kaggle/'
     data_dir = project_dir + 'march-machine-learning-mania-2016-v1/'
 
     file_names = {
@@ -108,11 +108,10 @@ def make_mmlm2016_data_set():
     games = extract_games_from_regular_season(regular_season)
     basic_data_set = join_games_and_win_ratios(games, win_ratios)
 
-    # basic_data_set.to_hdf(data_dir + 'basic_data_set.h5',
-    #                       'table', append=False)
+    basic_data_set.to_hdf(data_dir + 'basic_data_set.h5',
+                          key='table', append=False)
 
-    basic_data_set.to_csv(data_dir + 'basic_data_set.csv',
-                          sep=',', index_label='index')
+    # basic_data_set.to_csv('~/Projects/Kaggle/march-machine-learning-mania-2016-v1/basic_data_set.csv', ',')
 
     print('Basic Data Set example:')
     print(type(basic_data_set))
