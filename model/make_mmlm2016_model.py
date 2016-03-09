@@ -1,14 +1,12 @@
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.cross_validation import train_test_split
+from . import configer
 
 
 def make_mmlm2016_model():
-    project_dir = '/Users/cooperoelrichs/Projects/Kaggle/'
-    data_dir = project_dir + 'march-machine-learning-mania-2016-v1/'
-    basic_data_set_file_name = 'basic_data_set.h5'
-
-    basic_data_set = pd.read_hdf(data_dir + basic_data_set_file_name,
+    config = configer.from_json('model/config_mmlm2016.json')
+    basic_data_set = pd.read_hdf(config.basic_data_set_file_name,
                                  key='table')
 
     X = basic_data_set[

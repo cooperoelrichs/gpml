@@ -1,0 +1,14 @@
+{
+    "basic_data_set_file_name": "basic_data_set.h5",
+    "data_dir": "march-machine-learning-mania-2016-v1/",
+    "file_names": {
+        "regular_season_detailed_results": "RegularSeasonDetailedResults.csv",
+        "sample_submission": "SampleSubmission.csv",
+        "seasons": "Seasons.csv",
+        "teams": "Teams.csv",
+        "tourney_detailed_results": "TourneyDetailedResults.csv",
+        "tourney_seeds": "TourneySeeds.csv",
+        "tourney_slots": "TourneySlots.csv"
+    },
+    "project_dir": "/Users/cooperoelrichs/Projects/Kaggle/"
+}

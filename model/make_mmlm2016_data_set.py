@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
+from . import configer
 
 
 def open_data_files(data_dir, file_names):
@@ -90,25 +91,15 @@ def join_games_and_win_ratios(games, win_ratios):
 
 
 def make_mmlm2016_data_set():
-    project_dir = '/Users/cooperoelrichs/Projects/Kaggle/'
-    data_dir = project_dir + 'march-machine-learning-mania-2016-v1/'
+    config = configer.from_json('model/config_mmlm2016.json')
 
-    file_names = {
-        'regular_season_detailed_results': 'RegularSeasonDetailedResults.csv',
-        'seasons': 'Seasons.csv',
-        'teams': 'Teams.csv',
-        'tourney_detailed_results': 'TourneyDetailedResults.csv',
-        'tourney_seeds': 'TourneySeeds.csv',
-        'tourney_slots': 'TourneySlots.csv',
-    }
-
-    data_frames = open_data_files(data_dir, file_names)
+    data_frames = open_data_files(config.data_dir, config.file_names)
     regular_season = data_frames['regular_season_detailed_results']
     win_ratios = calculate_regular_season_win_ratios(regular_season)
     games = extract_games_from_regular_season(regular_season)
     basic_data_set = join_games_and_win_ratios(games, win_ratios)
 
-    basic_data_set.to_hdf(data_dir + 'basic_data_set.h5',
+    basic_data_set.to_hdf(config.basic_data_set_file_name,
                           key='table', append=False)
 
     print('Basic Data Set example:')
@@ -116,9 +107,27 @@ def make_mmlm2016_data_set():
     print(basic_data_set[0:2])
     print('Finished.')
 
+    # Plot straight from Pandas
     # import matplotlib
     # import matplotlib.pyplot as plt
     # matplotlib.style.use('ggplot')
     # plt.figure()
     # regular_season_win_ratios[0:40].plot(kind='bar')
     # plt.show()
+
+    # Write JSON
+    # with open('model/config_mmlm2016.json', 'w') as f:
+    #     json.dump(json_config, f, sort_keys=True, indent=4)
+    #     f.write('\n')
+
+
+def make_mmlm2016_submission_set():
+    data_frames = get_data_frames()
+    tourney_slots = data_frames['tourney_slots']
+
+    # This is complex, I need a seeds to all possible matchups algo. Trees???
+
+    submission_ids = [
+        series['']
+        for _, series in teams.iterrows()
+    ]
