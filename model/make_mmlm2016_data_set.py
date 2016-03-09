@@ -4,16 +4,6 @@ import random
 from . import configer
 
 
-def open_data_files(data_dir, file_names):
-    frames = {}
-
-    for name, file_name in file_names.items():
-        print('loading: %s' % name)
-        frames[name] = pd.read_csv(data_dir + file_name)
-
-    return frames
-
-
 def check_all_teams_are_accounted_for(regular_season, w_team_counts,
                                       l_team_counts, w_team_ratios):
     w_teams, l_teams = regular_season['Wteam'], regular_season['Lteam']
@@ -93,8 +83,7 @@ def join_games_and_win_ratios(games, win_ratios):
 def make_mmlm2016_data_set():
     config = configer.from_json('model/config_mmlm2016.json')
 
-    data_frames = open_data_files(config.data_dir, config.file_names)
-    regular_season = data_frames['regular_season_detailed_results']
+    regular_season = config.data_frames['regular_season_detailed_results']
     win_ratios = calculate_regular_season_win_ratios(regular_season)
     games = extract_games_from_regular_season(regular_season)
     basic_data_set = join_games_and_win_ratios(games, win_ratios)
@@ -122,8 +111,9 @@ def make_mmlm2016_data_set():
 
 
 def make_mmlm2016_submission_set():
-    data_frames = get_data_frames()
-    tourney_slots = data_frames['tourney_slots']
+    config = configer.from_json('model/config_mmlm2016.json')
+
+    tourney_slots = config.data_frames['tourney_slots']
 
     # This is complex, I need a seeds to all possible matchups algo. Trees???
 
