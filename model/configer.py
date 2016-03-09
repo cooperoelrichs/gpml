@@ -15,8 +15,12 @@ class Configer(object):
     def __init__(self, config):
         self.project_dir = config['project_dir']
         self.data_dir = self.project_dir + config['data_dir']
-        self.basic_data_set_file_name = (self.data_dir +
-                                         config['basic_data_set_file_name'])
+
+        self.basic_data_set_file_name = (
+            self.data_dir + config['basic_data_set_file_name'])
+        self.submission_data_set_file_name = (
+            self.data_dir + config['submission_data_set_file_name'])
+
         self.file_names = config['file_names']
         self.data_frames = self.open_data_files(self.data_dir, self.file_names)
 

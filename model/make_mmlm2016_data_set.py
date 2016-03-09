@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
+import re
 from . import configer
 
 
@@ -110,14 +111,36 @@ def make_mmlm2016_data_set():
     #     f.write('\n')
 
 
+def make_games_dict(id_str):
+    split_on_underscore = re.compile('([^_]+)')
+    year, team1, team2 = split_on_underscore.findall(id_str)
+    return {
+        'Id': id_str,
+        'year': int(year),
+        'team1': int(team1),
+        'team2': int(team2)
+    }
+
+
 def make_mmlm2016_submission_set():
     config = configer.from_json('model/config_mmlm2016.json')
+    regular_season = config.data_frames['regular_season_detailed_results']
+    win_ratios = calculate_regular_season_win_ratios(regular_season)
 
-    tourney_slots = config.data_frames['tourney_slots']
+    # TODO Generate this properly, Hax for now.
+    ss = config.data_frames['sample_submission']
 
-    # This is complex, I need a seeds to all possible matchups algo. Trees???
-
-    submission_ids = [
-        series['']
-        for _, series in teams.iterrows()
+    submission_games = [
+        make_games_dict(series['Id'])
+        for _, series in ss.iterrows()
     ]
+
+    submission_games = pd.DataFrame.from_dict(submission_games)
+    submission_games = join_games_and_win_ratios(submission_games, win_ratios)
+    submission_games.to_hdf(config.submission_data_set_file_name,
+                            key='table', append=False)
+
+    print('Submission Data Set example:')
+    print(type(submission_games))
+    print(submission_games[0:2])
+    print('Finished.')
