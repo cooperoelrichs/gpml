@@ -5,6 +5,11 @@ from . import configer
 
 
 def make_mmlm2016_model():
+    # TODO:
+    # 1. Win ratio by year.
+    # 2. Seeds or seed difference?
+    # 2. Ensemble with other Kagglers shared results.
+
     config = configer.from_json('model/config_mmlm2016.json')
     basic_data_set = pd.read_hdf(config.basic_data_set_file_name,
                                  key='table')
@@ -32,8 +37,21 @@ def make_mmlm2016_model():
 
     lr.fit(X_train, y_train)
     score = lr.score(X_test, y_test)
-
     print('LR Score: %0.2f' % score)
 
-    # submission = lr.predict_proba(X_submission)
-    # save_submission(submission)
+    submission_data_set = pd.read_hdf(config.submission_data_set_file_name,
+                                      key='table')
+
+    X_submission = submission_data_set[
+        ['win_ratio_team1', 'win_ratio_team2', 'win_ratio_difference']
+    ].values
+
+    predictions = lr.predict_proba(X_submission)
+    submission_data_set['Pred'] = predictions[:, 1]
+    submission_data_set[['Id', 'Pred']].to_csv(
+        config.data_dir + 'submission.csv', sep=',', index=False)
+
+    print('Submission predictions example:')
+    print(type(submission_data_set))
+    print(submission_data_set[0:2])
+    print('Finished.')
