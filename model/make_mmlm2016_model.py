@@ -6,7 +6,7 @@ from . import configer
 
 
 def x_column_names(data_set):
-    return data_set.columns - ['result', 'team1', 'team2', 'Id']
+    return data_set.columns - ['result', 'team1', 'team2', 'Id', 'year']
 
 
 def get_data(config):
