@@ -25,13 +25,8 @@ def calculate_regular_season_win_ratios(regular_season, years):
 
         w_team_ratios = w_team_counts / (w_team_counts + l_team_counts)
         w_team_ratios.name = 'win_ratio_%i' % year
+        w_team_ratios.fillna(0, inplace=True)
         ratios_by_year[year] = w_team_ratios
-
-        if year == 2005:
-            print(w_team_ratios[1366])
-            print(l_team_counts[1366])
-            print(w_team_counts[1366])
-            raise('!!!')
 
     all_teams = get_all_teams_sorted(regular_season)
     ratios_by_year = fill_in_missing_teams(ratios_by_year, all_teams)
@@ -73,9 +68,9 @@ def fill_in_missing_teams(ratios_by_year, all_teams):
         else:
             for team in missing_teams:
                 for left_replacment_year in all_years:
-                    if team in ratios_by_year[left_replacment_year].index:
-                        for right_replacment_year in reversed(all_years[left_replacment_year:]):
-                            if team in ratios_by_year[right_replacment_year].index:
+                    if left_replacment_year < year and team in ratios_by_year[left_replacment_year].index:
+                        for right_replacment_year in reversed(all_years):
+                            if right_replacment_year > year and team in ratios_by_year[right_replacment_year].index:
                                 if year == 2004 and team == 1289:
                                     print(right_replacment_year)
                                     print(left_replacment_year)
@@ -86,7 +81,17 @@ def fill_in_missing_teams(ratios_by_year, all_teams):
                                 ))
                                 break
                             elif right_replacment_year == min(all_years):
-                                raise RuntimeError('No replacment year found - hit min.')
+                                for team in missing_teams:
+                                    for replacment_year in reversed(all_years):
+                                        if team in ratios_by_year[replacment_year].index:
+                                            ratios_by_year[year].set_value(
+                                                team, ratios_by_year[replacment_year][team])
+                                            break
+                                        elif replacment_year == min(all_years):
+                                            raise RuntimeError('No replacment year found.')
+                                        else:
+                                            pass
+                                # raise RuntimeError('No replacment year found - hit min.')
                             else:
                                 pass
                         break
@@ -164,7 +169,7 @@ def which_years(regular_season):
 
 
 def check_and_save_to_hdf(df, file_name):
-    if np.isnan(df.values).any():
+    if pd.isnull(df.values).any():
         raise RuntimeError('df contains NaNs - %s' % file_name)
     df.to_hdf(file_name, key='table', append=False)
 
