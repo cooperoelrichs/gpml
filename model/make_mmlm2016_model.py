@@ -7,8 +7,9 @@ from . import configer
 def make_mmlm2016_model():
     # TODO:
     # 1. Win ratio by year.
-    # 2. Seeds or seed difference?
-    # 2. Ensemble with other Kagglers shared results.
+    # 2. Score difference
+    # 3. Seeds or seed difference?
+    # 4. Ensemble with other Kagglers shared results.
 
     config = configer.from_json('model/config_mmlm2016.json')
     basic_data_set = pd.read_hdf(config.basic_data_set_file_name,
