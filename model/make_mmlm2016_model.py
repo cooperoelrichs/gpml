@@ -6,7 +6,8 @@ from . import configer
 
 
 def x_column_names(data_set):
-    return data_set.columns - ['result', 'team1', 'team2', 'Id', 'year']
+    return data_set.columns.difference(
+        ['result', 'team1', 'team2', 'Id', 'year'])
 
 
 def get_data(config):
@@ -16,7 +17,7 @@ def get_data(config):
     column_names = x_column_names(basic_data_set)
     X = basic_data_set[column_names].values
     y = basic_data_set['result'].values
-    return X, y
+    return X, y, column_names
 
 
 def make_predictions(config, lr, submission_data_set):
@@ -27,6 +28,23 @@ def make_predictions(config, lr, submission_data_set):
     return predictions
 
 
+def print_coefs(feature_names, lr):
+    for feature, coef in zip(feature_names, lr.coef_[0]):
+        print('%s - %.2f' % (feature, coef))
+
+
+def save_submission(lr, config):
+    submission_file = config.data_dir + 'submission.csv'
+    print('Saving submission - %s' % submission_file)
+
+    submission_data_set = pd.read_hdf(config.submission_data_set_file_name,
+                                      key='table')
+    predictions = make_predictions(config, lr, submission_data_set)
+    submission_data_set['Pred'] = predictions[:, 1]
+    submission_data_set[['Id', 'Pred']].to_csv(
+        submission_file, sep=',', index=False)
+
+
 def make_mmlm2016_model():
     # TODO:
     # 2. Score difference
@@ -34,7 +52,7 @@ def make_mmlm2016_model():
     # 4. Ensemble with other Kagglers shared results.
 
     config = configer.from_json('model/config_mmlm2016.json')
-    X, y = get_data(config)
+    X, y, feature_names = get_data(config)
 
     # TODO Seperate out a 'final test' set from cv data
 
@@ -43,7 +61,7 @@ def make_mmlm2016_model():
 
     lr = LogisticRegression(
         penalty='l1',
-        C=0.1,
+        C=0.0001,
         class_weight='balanced',
         max_iter=100,
         random_state=1,
@@ -54,17 +72,12 @@ def make_mmlm2016_model():
 
     lr.fit(X_train, y_train)
     score = lr.score(X_test, y_test)
+    print_coefs(feature_names, lr)
     print('LR Score: %0.2f' % score)
 
-    submission_data_set = pd.read_hdf(config.submission_data_set_file_name,
-                                      key='table')
-    predictions = make_predictions(config, lr, submission_data_set)
+    save_submission(lr ,config)
 
-    submission_data_set['Pred'] = predictions[:, 1]
-    submission_data_set[['Id', 'Pred']].to_csv(
-        config.data_dir + 'submission.csv', sep=',', index=False)
-
-    print('Submission predictions example:')
-    print(type(submission_data_set))
-    print(submission_data_set[0:2])
+    # print('Submission predictions example:')
+    # print(type(submission_data_set))
+    # print(submission_data_set[0:2])
     print('Finished.')
