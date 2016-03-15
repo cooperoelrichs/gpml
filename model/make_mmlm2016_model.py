@@ -30,7 +30,7 @@ def make_predictions(config, lr, submission_data_set):
 
 def print_coefs(feature_names, lr):
     for feature, coef in zip(feature_names, lr.coef_[0]):
-        print('%s - %.2f' % (feature, coef))
+        print('%s - %.3f' % (feature, coef))
 
 
 def save_submission(lr, config):
@@ -47,9 +47,9 @@ def save_submission(lr, config):
 
 def make_mmlm2016_model():
     # TODO:
-    # 2. Score difference
-    # 3. Seeds or seed difference?
-    # 4. Ensemble with other Kagglers shared results.
+    # 0. Difference from tournament year.
+    # 1. Seeds or seed difference?
+    # 2. Ensemble with other Kagglers shared results.
 
     config = configer.from_json('model/config_mmlm2016.json')
     X, y, feature_names = get_data(config)
@@ -73,9 +73,9 @@ def make_mmlm2016_model():
     lr.fit(X_train, y_train)
     score = lr.score(X_test, y_test)
     print_coefs(feature_names, lr)
-    print('LR Score: %0.2f' % score)
+    print('LR Score: %.2f' % score)
 
-    save_submission(lr ,config)
+    save_submission(lr, config)
 
     # print('Submission predictions example:')
     # print(type(submission_data_set))
