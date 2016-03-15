@@ -30,6 +30,7 @@ def calculate_regular_season_win_ratios(regular_season, years):
 
     all_teams = get_all_teams_sorted(regular_season)
     ratios_by_year = fill_in_missing_teams(ratios_by_year, all_teams)
+    check_ratios_by_year(ratios_by_year, all_teams)
     ratios = pd.concat(list(ratios_by_year.values()), axis=1)
 
     ratios['team1'] = ratios.index
@@ -38,69 +39,16 @@ def calculate_regular_season_win_ratios(regular_season, years):
 
 
 def fill_in_missing_teams(ratios_by_year, all_teams):
-    all_years = sorted(list(ratios_by_year.keys()))
-
     for year, ratios in ratios_by_year.items():
         missing_teams = np.setdiff1d(all_teams, ratios.index.values)
+        for team in missing_teams:
+            ratios_by_year[year].set_value(team, 0.5)
 
-        if year == min(all_years):
-            for team in missing_teams:
-                for replacment_year in all_years:
-                    if team in ratios_by_year[replacment_year].index:
-                        ratios_by_year[year].set_value(
-                            team, ratios_by_year[replacment_year][team])
-                        break
-                    elif replacment_year == max(all_years):
-                        raise RuntimeError('No replacment year found.')
-                    else:
-                        pass
-        elif year == max(all_years):
-            for team in missing_teams:
-                for replacment_year in reversed(all_years):
-                    if team in ratios_by_year[replacment_year].index:
-                        ratios_by_year[year].set_value(
-                            team, ratios_by_year[replacment_year][team])
-                        break
-                    elif replacment_year == min(all_years):
-                        raise RuntimeError('No replacment year found.')
-                    else:
-                        pass
-        else:
-            for team in missing_teams:
-                for left_replacment_year in all_years:
-                    if left_replacment_year < year and team in ratios_by_year[left_replacment_year].index:
-                        for right_replacment_year in reversed(all_years):
-                            if right_replacment_year > year and team in ratios_by_year[right_replacment_year].index:
-                                if year == 2004 and team == 1289:
-                                    print(right_replacment_year)
-                                    print(left_replacment_year)
+    return ratios_by_year
 
-                                ratios_by_year[year].set_value(team, (
-                                    (ratios_by_year[right_replacment_year][team] +
-                                     ratios_by_year[left_replacment_year][team]) / 2
-                                ))
-                                break
-                            elif right_replacment_year == min(all_years):
-                                for team in missing_teams:
-                                    for replacment_year in reversed(all_years):
-                                        if team in ratios_by_year[replacment_year].index:
-                                            ratios_by_year[year].set_value(
-                                                team, ratios_by_year[replacment_year][team])
-                                            break
-                                        elif replacment_year == min(all_years):
-                                            raise RuntimeError('No replacment year found.')
-                                        else:
-                                            pass
-                                # raise RuntimeError('No replacment year found - hit min.')
-                            else:
-                                pass
-                        break
-                    elif left_replacment_year == max(all_years):
-                        raise RuntimeError('No replacment year found - hit max.')
-                    else:
-                        pass
 
-    # Check
+def check_ratios_by_year(ratios_by_year, all_teams):
+    """Ensure there are no NaNs or missing teams."""
     for year, ratios in ratios_by_year.items():
         if np.isnan(ratios.values).any():
             print(ratios[np.isnan(ratios.values)])
@@ -110,15 +58,6 @@ def fill_in_missing_teams(ratios_by_year, all_teams):
         else:
             print(np.setdiff1d(all_teams, ratios.index.values))
             raise RuntimeError('Still missing teams - %i' % year)
-
-    # years = years.sort()
-    # column_and_index_of_nans =
-    # for column_name in games.columns:
-    #     row_indicies = games[column_name].isnull()
-    #     column_and_index_of_nans[column_name] = row_indicies
-    #
-    # df.T.fillna(df.mean(axis=1)).T
-    return ratios_by_year
 
 
 def make_dict_for_game(series):
@@ -145,20 +84,22 @@ def extract_games_from_regular_season(regular_season):
     return pd.DataFrame.from_dict(games)
 
 
-def merge_win_ratios_on_team(games, win_ratios, team, year):
-    wr_string = 'win_ratio_%i_%s' % (year, team)
+def merge_wr(games, win_ratios, team_column, year):
+    wr_string = 'win_ratio_%i_%s' % (year, team_column)
     win_ratios[wr_string] = win_ratios['win_ratio_%i' % year]
-    return games.merge(win_ratios[[team, wr_string]], on=team, how='left')
+    games = games.merge(win_ratios[[team_column, wr_string]],
+                        on=team_column, how='left')
+    return games
 
 
 def join_games_and_win_ratios(games, win_ratios, years):
     for year in years:
-        games = merge_win_ratios_on_team(games, win_ratios, 'team1', year)
-        games = merge_win_ratios_on_team(games, win_ratios, 'team2', year)
+        merged_games = merge_wr(games, win_ratios, 'team1', year)
+        merged_games = merge_wr(merged_games, win_ratios, 'team2', year)
 
         games['win_ratio_%i_difference' % year] = (
-            games['win_ratio_%i_team1' % year] -
-            games['win_ratio_%i_team2' % year]
+            merged_games['win_ratio_%i_team1' % year] -
+            merged_games['win_ratio_%i_team2' % year]
         )
 
     return games
@@ -174,6 +115,25 @@ def check_and_save_to_hdf(df, file_name):
     df.to_hdf(file_name, key='table', append=False)
 
 
+def add_relative_diff_to_series(series):
+    print(series.axes)
+    for i in range(0, 10):
+        year = series['year']
+        series['wr_diff_%i' % i] = series['win_ratio_%i_difference' % (year - i)]
+
+    print(series)
+    exit()
+    return series
+
+
+def add_relative_wr_diff(games):
+    games = [
+        add_relative_diff_to_series(series)
+        for _, series in games.iterrows()
+    ]
+    return pd.DataFrame.from_dict(games)
+
+
 def make_mmlm2016_data_set():
     config = configer.from_json('model/config_mmlm2016.json')
 
@@ -181,7 +141,8 @@ def make_mmlm2016_data_set():
     years = which_years(regular_season)
     win_ratios = calculate_regular_season_win_ratios(regular_season, years)
     games = extract_games_from_regular_season(regular_season)
-    basic_data_set = join_games_and_win_ratios(games, win_ratios, years)
+    games_with_wr = join_games_and_win_ratios(games, win_ratios, years)
+    basic_data_set = add_relative_wr_diff(games_with_wr)
 
     check_and_save_to_hdf(basic_data_set, config.basic_data_set_file_name)
 
