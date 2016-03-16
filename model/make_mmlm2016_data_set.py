@@ -51,12 +51,10 @@ def check_ratios_by_year(ratios_by_year, all_teams):
     """Ensure there are no NaNs or missing teams."""
     for year, ratios in ratios_by_year.items():
         if np.isnan(ratios.values).any():
-            print(ratios[np.isnan(ratios.values)])
             raise RuntimeError('Still contains NaNs - %i' % year)
         elif np.array_equal(ratios.sort_index().index.values, all_teams):
             pass
         else:
-            print(np.setdiff1d(all_teams, ratios.index.values))
             raise RuntimeError('Still missing teams - %i' % year)
 
 
@@ -71,15 +69,18 @@ def make_results_dict(series, team1, team2, result):
     return{
         'team1': series[team1],
         'team2': series[team2],
+        'year': series['Season'],
         'result': result
     }
 
 
 def extract_games_from_regular_season(regular_season):
     random.seed(0)
+    column_names = ['Season', 'Wteam', 'Lteam']
+
     games = [
         make_dict_for_game(series)
-        for _, series in regular_season[['Wteam', 'Lteam']].iterrows()
+        for _, series in regular_season[column_names].iterrows()
     ]
     return pd.DataFrame.from_dict(games)
 
@@ -116,22 +117,24 @@ def check_and_save_to_hdf(df, file_name):
 
 
 def add_relative_diff_to_series(series):
-    print(series.axes)
-    for i in range(0, 10):
+    for i in range(0, 6):
         year = series['year']
-        series['wr_diff_%i' % i] = series['win_ratio_%i_difference' % (year - i)]
+        new_column_name = 'win_ratio_%i_difference' % (year - i)
+        series['wr_diff_%i' % i] = series[new_column_name]
 
-    print(series)
-    exit()
     return series
 
 
 def add_relative_wr_diff(games):
     games = [
         add_relative_diff_to_series(series)
-        for _, series in games.iterrows()
+        for _, series in games[games['year'] >= 2008].iterrows()
     ]
-    return pd.DataFrame.from_dict(games)
+
+    required_columns = ['Id', 'team1', 'team2']
+    required_columns += ['wr_diff_%i' % i for i in range(0, 6)]
+    games = pd.DataFrame(games)[required_columns]
+    return games
 
 
 def make_mmlm2016_data_set():
@@ -193,6 +196,8 @@ def make_mmlm2016_submission_set():
     submission_games = pd.DataFrame.from_dict(submission_games)
     submission_games = join_games_and_win_ratios(
         submission_games, win_ratios, years)
+    submission_games = add_relative_wr_diff(submission_games)
+
     check_and_save_to_hdf(submission_games,
                           config.submission_data_set_file_name)
 
