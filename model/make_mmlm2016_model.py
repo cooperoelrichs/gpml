@@ -61,7 +61,7 @@ def make_mmlm2016_model():
 
     lr = LogisticRegression(
         penalty='l1',
-        C=0.0001,
+        C=0.01,
         class_weight='balanced',
         max_iter=100,
         random_state=1,

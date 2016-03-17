@@ -1,9 +1,9 @@
 {
     "basic_data_set_file_name": "basic_data_set.h5",
     "submission_data_set_file_name": "submission_data_set.h5",
-    "data_dir": "march-machine-learning-mania-2016-v1/",
+    "data_dir": "march-machine-learning-mania-2016-v2/",
     "project_dir": "/Users/cooperoelrichs/Projects/Kaggle/",
-    
+
     "file_names": {
         "regular_season_detailed_results": "RegularSeasonDetailedResults.csv",
         "sample_submission": "SampleSubmission.csv",

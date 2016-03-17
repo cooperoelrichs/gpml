@@ -131,10 +131,12 @@ def add_relative_wr_diff(games):
         for _, series in games[games['year'] >= 2008].iterrows()
     ]
 
-    required_columns = ['Id', 'team1', 'team2']
-    required_columns += ['wr_diff_%i' % i for i in range(0, 6)]
-    games = pd.DataFrame(games)[required_columns]
-    return games
+    data_set_columns = ['Id', 'result', 'team1', 'team2']
+    data_set_columns += ['wr_diff_%i' % i for i in range(0, 6)]
+    games = pd.DataFrame(games)
+    data_set_columns = np.intersect1d(games.columns.values, data_set_columns)
+    data_set = games[data_set_columns]
+    return data_set
 
 
 def make_mmlm2016_data_set():
