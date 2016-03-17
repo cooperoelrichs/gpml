@@ -17,8 +17,8 @@ def extract_transform_load():
     config.open_local_train_and_test_files()
     train = config.local_data_frames['train']
 
+    normalised = data_set_maker.normalise_fp_columns(train)
+
+    # Normalise data (floats)
     # Replace NaNs... (floats and categoricals)
     # One hot encoding
-    # Normalise data
-
-    print(train.shape)
