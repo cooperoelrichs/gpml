@@ -1,5 +1,6 @@
 from gpml.data_set import data_set_maker
 from . import configer
+import pandas as pd
 
 
 def split_local_train_and_test_data():
@@ -17,7 +18,10 @@ def extract_transform_load():
     config.open_local_train_and_test_files()
     train = config.local_data_frames['train']
 
-    normalised = data_set_maker.normalise_num_columns(train, ['ID', 'target'])
+    data_set = data_set_maker.normalise_num_columns(train, ['ID', 'target'])
+    data_set = data_set_maker.fill_nans_in_num_columns_with(data_set, 0)
+    data_set = data_set_maker.fill_nans_in_str_columns_with(data_set, '-')
+    data_set = data_set_maker.dummy_encode_str_columns(data_set)
 
     # Normalise data (floats)
     # Replace NaNs... (floats and categoricals)
