@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.cross_validation import train_test_split
 
 
@@ -26,6 +27,50 @@ def split_and_save_local_data(data, test_size,
 
     save_csv(train, train_file_name)
     save_csv(test, test_file_name)
+
+
+def get_num_columns(df):
+    return df.select_dtypes(include=['number']).columns
+
+
+def get_str_columns(df):
+    """This will get all 'object' columns.
+    TODO: add Pandas Doc reference"""
+    return df.select_dtypes(include=['object']).columns
+
+
+def normalise_num_columns(df, non_feature_columns):
+    num_columns = get_num_columns(df)
+    feature_num_columns = num_columns.difference(non_feature_columns)
+    df[feature_num_columns] = df[feature_num_columns].apply(
+        lambda x: (x - x.mean()) / x.std())
+    return df
+
+
+def fill_nans_in_num_columns_with(df, this):
+    num_columns = get_num_columns(df)
+    df = fill_nans_in_these_columns_with(df, num_columns, this)
+    return df
+
+
+def fill_nans_in_str_columns_with(df, this):
+    str_columns = get_str_columns(df)
+    df = fill_nans_in_these_columns_with(df, str_columns, this)
+    return df
+
+
+def fill_nans_in_these_columns_with(df, columns, this):
+    df[columns] = df[columns].fillna(this)
+    return df
+
+
+def dummy_encode_str_columns(df):
+    print(df.shape)
+    str_columns = get_str_columns(df)
+    dummies = pd.get_dummies(df[str_columns], prefix=df[str_columns].columns)
+    df = pd.concat([df[df.columns.difference(str_columns)], dummies])
+    print(df.shape)
+    return df
 
 
 def make_data_set(config):
