@@ -1,6 +1,4 @@
 {
-    "data_set_file_name": "data_set.h5",
-    "submission_data_set_file_name": "submission_data_set.h5",
     "data_dir": "bnp-paribas-cardif-claims-management/",
     "project_dir": "/Users/cooperoelrichs/Projects/Kaggle/",
 
@@ -12,8 +10,13 @@
         "sample_submission": "sample_submission.csv"
     },
 
-    "local_file_names": {
-        "train": "local_train.csv",
-        "test": "local_test.csv"
+    "data_set_names": {
+        "training_data_set": "training_data_set.h5",
+        "testing_data_set": "testing_data_set.h5"
+    },
+
+    "local_data_set_names": {
+        "local_training_data_set": "local_training_data_set.h5",
+        "local_testing_data_set": "local_testing_data_set.h5"
     }
 }

@@ -9,9 +9,9 @@ from model.make_data_set import (
 
 class TestMakeDataSet(unittest.TestCase):
 
-    def test_make_mmlm2016_data_set(self):
-        # split_local_train_and_test_data()
+    def test_make_data_set(self):
         extract_transform_load()
+        split_local_train_and_test_data()
 
 
 if __name__ == '__main__':
