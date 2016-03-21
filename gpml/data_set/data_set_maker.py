@@ -6,6 +6,7 @@ from sklearn.cross_validation import train_test_split
 def check_and_save_to_hdf(df, file_name):
     if pd.isnull(df.values).any():
         raise RuntimeError('df contains NaNs - %s' % file_name)
+    print('Saving HDF: %s' % file_name)
     save_hdf(df, file_name)
 
 
@@ -25,8 +26,8 @@ def split_and_save_local_data(data, test_size,
     print('Local Train shape: %i, %i' % train.shape)
     print('Local Test shape:  %i, %i' % test.shape)
 
-    save_csv(train, train_file_name)
-    save_csv(test, test_file_name)
+    check_and_save_to_hdf(train, train_file_name)
+    check_and_save_to_hdf(test, test_file_name)
 
 
 def get_num_columns(df):
@@ -34,8 +35,10 @@ def get_num_columns(df):
 
 
 def get_str_columns(df):
-    """This will get all 'object' columns.
-    TODO: add Pandas Doc reference"""
+    """
+    This will get all 'object' columns.
+    TODO: add Pandas Doc reference
+    """
     return df.select_dtypes(include=['object']).columns
 
 
@@ -65,11 +68,18 @@ def fill_nans_in_these_columns_with(df, columns, this):
 
 
 def dummy_encode_str_columns(df):
-    print(df.shape)
     str_columns = get_str_columns(df)
-    dummies = pd.get_dummies(df[str_columns], prefix=df[str_columns].columns)
-    df = pd.concat([df[df.columns.difference(str_columns)], dummies])
-    print(df.shape)
+
+    # This doesn't makes a dummy for all values, which will make the output
+    # non-unique.
+    # Sparse causes the hdf wright/read to fail.
+    dummies = pd.get_dummies(df[str_columns], prefix=df[str_columns].columns,
+                             sparse=False)
+
+    # memory_usage = dummies.memory_usage(index=True) / 1024 ^ 3
+    # print('Memory size of dummies (GB): %0.3f' % memory_usage)
+
+    df = pd.concat([df[df.columns.difference(str_columns)], dummies], axis=1)
     return df
 
 
