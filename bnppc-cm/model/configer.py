@@ -27,6 +27,9 @@ class Configer(object):
         self.data_frames = self.open_data_files(self.file_names, 'csv')
         self.local_test_size = config['local_test_size']
 
+        self.not_x_labels = config['not_x_labels']
+        self.y_label = config['y_label']
+
     def add_dir_to_names(self, names, dir):
         names = dict([(name, dir + file_name)
                       for name, file_name in names.items()

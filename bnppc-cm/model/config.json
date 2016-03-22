@@ -18,5 +18,8 @@
     "local_data_set_names": {
         "local_training_data_set": "local_training_data_set.h5",
         "local_testing_data_set": "local_testing_data_set.h5"
-    }
+    },
+
+    "not_x_labels": ["ID", "target"],
+    "y_label": ["target"]
 }
