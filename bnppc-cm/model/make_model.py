@@ -1,46 +1,67 @@
 from gpml.model import model_maker
 from . import configer
-import numpy as np
-from sklearn.cross_validation import KFold
-from sklearn.linear_model import LogisticRegression
+
+
+def get_x(df, not_x_labels):
+    feature_names = df.columns.difference(not_x_labels)
+    return df[feature_names]
+
+
+def get_y(df, y_label):
+    return df[y_label]
+
+
+def get_x_and_y(df, not_x_labels, y_label):
+    return get_x(df, not_x_labels), get_y(df, y_label)
+
+
+def get_xs_and_ys(local_train, local_test, not_x_labels, y_label):
+    X_train, y_train = get_x_and_y(
+        local_train, not_x_labels, y_label)
+    X_test, y_test = get_x_and_y(
+        local_test, not_x_labels, y_label)
+    return X_train, y_train, X_test, y_test
 
 
 def train_and_validate_model():
-    print('Splitting data set in a local training and testing sets')
+    print('Train and validate a model aginst local data.')
     config = configer.from_json('model/config.json')
+
     config.open_local_data_sets()
-
-    train = config.local_data_set_frames['local_training_data_set']
-
-    feature_names = train.columns.difference(config.not_x_labels)
-    X = train[feature_names]
-    y = train[config.y_label]
-
-    lr = LogisticRegression(
-        penalty='l1',
-        C=0.01,
-        class_weight='balanced',
-        max_iter=100,
-        random_state=1,
-        solver='lbfgs',
-        tol=0.000001,
-        # n_jobs=-1
+    X_train_local, y_train_local, X_test_local, y_test_local = get_xs_and_ys(
+        config.local_data_set_frames['local_training_data_set'],
+        config.local_data_set_frames['local_testing_data_set'],
+        config.not_x_labels, config.y_label
     )
 
-    kf_scores = []
-    kf = KFold(y.shape[0], n_folds=5)
+    print('\nModel building and cross validation.')
+    lr = model_maker.basic_lr()
+    kf_results = model_maker.kfolds_evaluation(
+        X_train_local, y_train_local, lr)
+    kf_results.print_results()
+    kf_results.print_mean_results()
 
-    for train_index, test_index in kf:
-        print(test_index.shape[0] /
-              (test_index.shape[0] + train_index.shape[0]))
-              
-        lr.fit(X.values[train_index, :], y['target'].values[train_index])
-        score = lr.score(X.values[test_index], y.values[test_index])
-        # model_maker.print_coefs(feature_names, lr)
-        kf_scores.append(score)
+    print('\nLocal validation.')
+    model_maker.evaluate_model(
+        X_train_local, y_train_local,
+        X_test_local, y_test_local,
+        lr
+    )
 
-    for score in kf_scores:
-        print('LR score: %.2f' % score)
+    # I should be saving the model here, and generating a submission later
 
-    print('Mean LR score: %.2f' % np.mean(kf_scores))
+    print('\nGenerate a submission.')
+    config.open_data_sets()
+    X_train, y_train, X_submission, _ = get_xs_and_ys(
+        config.data_set_frames['training_data_set'],
+        config.data_set_frames['testing_data_set'],
+        config.not_x_labels, config.y_label
+    )
+    id_column = config.data_set_frames['testing_data_set']['ID']
+    model_maker.make_and_save_submission(
+        X_train, y_train,
+        X_submission, id_column,
+        lr, config.submission_file_name
+    )
+
     print('Finished.')
