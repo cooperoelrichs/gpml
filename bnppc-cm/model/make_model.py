@@ -48,15 +48,21 @@ def train_and_validate_model():
         lr
     )
 
-    # I should be saving the model here, and generating a submission later
+    model_maker.dump_sklearn_model(lr, config.model_dump_file_name)
+    print('Finished.\n')
 
-    print('\nGenerate a submission.')
+
+def make_a_submission():
+    print('Generating a submission.')
+    config = configer.from_json('model/config.json')
     config.open_data_sets()
     X_train, y_train, X_submission, _ = get_xs_and_ys(
         config.data_set_frames['training_data_set'],
         config.data_set_frames['testing_data_set'],
         config.not_x_labels, config.y_label
     )
+
+    lr = model_maker.load_sklearn_model(config.model_dump_file_name)
     id_column = config.data_set_frames['testing_data_set']['ID']
     model_maker.make_and_save_submission(
         X_train, y_train,
@@ -64,4 +70,4 @@ def train_and_validate_model():
         lr, config.submission_file_name
     )
 
-    print('Finished.')
+    print('Finished.\n')

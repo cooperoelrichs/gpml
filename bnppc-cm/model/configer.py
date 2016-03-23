@@ -18,6 +18,8 @@ class Configer(object):
         self.data_dir = self.project_dir + config['data_dir']
         self.submission_file_name = (self.data_dir +
                                      config['submission_file_name'])
+        self.model_dump_file_name = (self.data_dir +
+                                     config['model_dump_file_name'])
 
         self.file_names = self.add_dir_to_names(
             config['file_names'], self.data_dir)

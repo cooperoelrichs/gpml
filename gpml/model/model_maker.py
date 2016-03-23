@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.cross_validation import KFold
 from sklearn.metrics import log_loss
+from sklearn.externals import joblib
 from gpml.data_set import data_set_maker
 
 
@@ -62,9 +63,7 @@ class ValidationResults(object):
                               X_test, y_test):
         model.fit(X_train, y_train)
         predictions = model.predict_proba(X_test)
-
-        # print(np.column_stack((y_test, predictions[:, 0], predictions[:, 1])))
-
+        
         acc = model.score(X_test, y_test)
         ll = log_loss(y_test,
                       predictions,
@@ -102,3 +101,14 @@ def make_and_save_submission(X_train, y_train,
                             index=id_column.index)
     submission = pd.concat((id_column, predictions), axis=1)
     submission.to_csv(file_name, sep=',', index=False)
+
+
+def dump_sklearn_model(model, file_name):
+    # TODO Can we use JSON or somthing instead?
+    print('Dumping model.')
+    joblib.dump(model, file_name)
+
+
+def load_sklearn_model(file_name):
+    print('Loading model.')
+    return joblib.load(file_name)
