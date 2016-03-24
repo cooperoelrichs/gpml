@@ -24,5 +24,18 @@
     },
 
     "not_x_labels": ["ID", "target"],
-    "y_label": "target"
+    "y_label": "target",
+
+    "parameter_grids": {
+        "LogisticRegression": [
+            {"C": [0.01, 0.1, 1], "penalty": ["l1", "l2"]}
+        ],
+        "SVC": [
+            {
+                "C": [0.0001, 0.001, 0.01, 0.1, 1, 10],
+                "kernel": ["linear", "poly", "rbf", "sigmoid"],
+                "degree": [3]
+            }
+        ]
+    }
 }

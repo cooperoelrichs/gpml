@@ -35,6 +35,8 @@ class Configer(object):
         self.not_x_labels = config['not_x_labels']
         self.y_label = config['y_label']
 
+        self.parameter_grids = config['parameter_grids']
+
     def add_dir_to_names(self, names, dir):
         names = dict([(name, dir + file_name)
                       for name, file_name in names.items()

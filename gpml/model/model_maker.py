@@ -1,26 +1,25 @@
 import numpy as np
 import pandas as pd
 import json
+import numbers
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 from sklearn.cross_validation import KFold
 from sklearn.metrics import log_loss
 from sklearn.externals import joblib
+from sklearn.grid_search import GridSearchCV
 from gpml.data_set import data_set_maker
 
 
-def print_coefs(feature_names, lr):
-    for feature, coef in zip(feature_names, lr.coef_[0]):
+def print_coefs(feature_names, model):
+    for feature, coef in zip(feature_names, model.coef_[0]):
         print('%s - %.3f' % (feature, coef))
-
-
-def empty_lr():
-    return LogisticRegression()
 
 
 def basic_lr():
     lr = LogisticRegression(
-        penalty='l1',
-        C=0.01,
+        penalty='l2',
+        C=0.1,
         class_weight='balanced',
         max_iter=100,
         random_state=1,
@@ -29,6 +28,19 @@ def basic_lr():
         # n_jobs=-1
     )
     return lr
+
+
+def basic_svc():
+    svc = SVC(
+        C=0.1,
+        kernel='rbf',
+        probability=True,
+        class_weight='auto',
+        max_iter=1000,
+        random_state=1,
+        tol=0.000001
+    )
+    return svc
 
 
 class ValidationResult(object):
@@ -46,7 +58,7 @@ class ValidationResults(object):
 
     def print_results(self):
         for r in self.results:
-            print('LR accuracy: %.3f, ll: %.3f' % (r.acc, r.ll))
+            print('Accuracy: %.3f, ll: %.3f' % (r.acc, r.ll))
 
     def get_accuracies(self):
         return np.array([r.acc for r in self.results])
@@ -58,9 +70,9 @@ class ValidationResults(object):
         accuracies = self.get_accuracies()
         log_losses = self.get_log_losses()
 
-        print("Mean LR accuracy: %0.3f (+/- %0.2f)"
+        print("Mean accuracy: %0.3f (+/- %0.3f)"
               % (accuracies.mean(), accuracies.std() * 2))
-        print("Mean LR LL: %0.3f (+/- %0.2f)"
+        print("Mean LL: %0.3f (+/- %0.3f)"
               % (log_losses.mean(), log_losses.std() * 2))
 
     def add_validation_result(self, model,
@@ -115,11 +127,12 @@ def make_and_save_submission(X_train, y_train,
     submission.to_csv(file_name, sep=',', index=False)
 
 
-def dump_lr_model(model, file_name, results):
+def dump_model(model, file_name, results):
     print('Dumping model to JSON.')
     model_dump = {}
+    model_dump['model_type_name'] = type(model).__name__
     model_dump['parameters'] = model.get_params()
-    coefs = model.coef_
+    coefs = model.support_vectors_
     model_dump['coefficients'] = {
         'list': coefs.tolist(),
         'dtype': str(coefs.dtype),
@@ -145,22 +158,57 @@ def check_coef_load(coefs, coef_dtype, coef_shape):
             'was: %s.' % str(coefs.shape))
 
 
-def load_lr_model(empty_model, file_name):
+def load_model(file_name):
     print('Loading model from JSON.')
     with open(file_name) as f:
         model_load = json.load(f)
 
     coef_dtype = model_load['coefficients']['dtype']
     coef_shape = tuple(model_load['coefficients']['shape'])
-
     coefs = np.array(
         model_load['coefficients']['list'],
         dtype=coef_dtype
     ).reshape(coef_shape)
-
     check_coef_load(coefs, coef_dtype, coef_shape)
 
+    empty_model = make_model_of_type(model_load['model_type_name'])
     empty_model.set_params(**model_load['parameters'])
-    empty_model.coef_ = coefs
+    empty_model.support_vectors_ = coefs
 
-    return empty_model, model_load['results']
+    results = model_load['results']
+    print('Loaded model results: %s' % str(results))
+    return empty_model, results
+
+
+def make_model_of_type(model_type_name):
+    if model_type_name == 'LogisticRegression':
+        return basic_lr()
+    elif model_type_name == 'SVC':
+        return basic_svc()
+
+
+def do_grid_search(model, param_grid, X, y):
+    print('Running Grid Search.')
+    gs = GridSearchCV(model, param_grid, scoring='log_loss', n_jobs=1, cv=5)
+    gs.fit(X, y)
+    best_est = gs.best_estimator_
+    best_params = best_est.get_params()
+
+    for grid in param_grid:
+        for key in grid.keys():
+            print(' - Chosen %s: %s' % (key, str(best_params[key])))
+
+    check_for_edge_cases(param_grid, best_params)
+    return best_est
+
+
+def check_for_edge_cases(param_grid, best_params):
+    for grid in param_grid:
+        for key, options in grid.items():
+            value = best_params[key]
+            if (isinstance(value, numbers.Number) and
+                    (value == max(options) or value == min(options))):
+                print(
+                    'Chosen value for %s, of %s, has hit an edge of: %s' %
+                    (key, str(value), str(options))
+                )
