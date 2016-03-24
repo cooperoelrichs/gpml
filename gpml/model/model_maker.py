@@ -15,7 +15,7 @@ def print_coefs(feature_names, lr):
 
 def empty_lr():
     return LogisticRegression()
-    
+
 
 def basic_lr():
     lr = LogisticRegression(

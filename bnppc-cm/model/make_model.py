@@ -35,6 +35,15 @@ def train_and_validate_model():
     )
 
     print('\nModel building and cross validation.')
+
+    # Fit C parameter
+    # Fit regularisation type
+    # ... whats next?
+    #  - Forums?
+    #  - Feature building?
+    #  - Other model types (SVM)?
+    #  - Ensemble?
+
     lr = model_maker.basic_lr()
     kf_results = model_maker.kfolds_evaluation(
         X_train_local, y_train_local, lr)
@@ -65,10 +74,10 @@ def make_a_submission():
     lr = model_maker.empty_lr()
     lr, _ = model_maker.load_lr_model(lr, config.model_dump_file_name)
     id_column = config.data_set_frames['testing_data_set']['ID']
+
     model_maker.make_and_save_submission(
         X_train, y_train,
         X_submission, id_column,
         lr, config.submission_file_name
     )
-
     print('Finished.\n')
