@@ -1,8 +1,9 @@
 {
     "data_dir": "bnp-paribas-cardif-claims-management/",
     "project_dir": "/Users/cooperoelrichs/Projects/Kaggle/",
+    "model_dump_dir": "model_dumps/",
     "submission_file_name": "submission.csv",
-    "model_dump_file_name": "model_dump.pkl",
+    "model_dump_file_name": "model_dump.json",
 
     "local_test_size": 0.33,
 

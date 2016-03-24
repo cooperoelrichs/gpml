@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import json
 from sklearn.linear_model import LogisticRegression
 from sklearn.cross_validation import KFold
 from sklearn.metrics import log_loss
@@ -11,6 +12,10 @@ def print_coefs(feature_names, lr):
     for feature, coef in zip(feature_names, lr.coef_[0]):
         print('%s - %.3f' % (feature, coef))
 
+
+def empty_lr():
+    return LogisticRegression()
+    
 
 def basic_lr():
     lr = LogisticRegression(
@@ -63,12 +68,18 @@ class ValidationResults(object):
                               X_test, y_test):
         model.fit(X_train, y_train)
         predictions = model.predict_proba(X_test)
-        
+
         acc = model.score(X_test, y_test)
         ll = log_loss(y_test,
                       predictions,
                       eps=10 ^ -15)
         self.append(acc, ll)
+
+    def get_mean_results(self):
+        return {
+            'accuracy': self.get_accuracies().mean(),
+            'log_loss': self.get_log_losses().mean()
+        }
 
 
 def kfolds_evaluation(X, y, model):
@@ -90,6 +101,7 @@ def evaluate_model(X_train, y_train,
     kfr = ValidationResults()
     kfr.add_validation_result(model, X_train, y_train, X_test, y_test)
     kfr.print_results()
+    return kfr.get_mean_results()
 
 
 def make_and_save_submission(X_train, y_train,
@@ -103,12 +115,52 @@ def make_and_save_submission(X_train, y_train,
     submission.to_csv(file_name, sep=',', index=False)
 
 
-def dump_sklearn_model(model, file_name):
-    # TODO Can we use JSON or somthing instead?
-    print('Dumping model.')
-    joblib.dump(model, file_name)
+def dump_lr_model(model, file_name, results):
+    print('Dumping model to JSON.')
+    model_dump = {}
+    model_dump['parameters'] = model.get_params()
+    coefs = model.coef_
+    model_dump['coefficients'] = {
+        'list': coefs.tolist(),
+        'dtype': str(coefs.dtype),
+        'shape': coefs.shape
+    }
+    model_dump['results'] = results
+
+    with open(file_name, 'w') as f:
+        json.dump(model_dump, f, sort_keys=True, indent=4)
+        f.write('\n')
 
 
-def load_sklearn_model(file_name):
-    print('Loading model.')
-    return joblib.load(file_name)
+def check_coef_load(coefs, coef_dtype, coef_shape):
+    if coefs.dtype != coef_dtype:
+        raise RuntimeError(
+            'Coef dtype is not correct, ' +
+            'expected: %s, ' % coef_dtype +
+            'was: %s.' % coefs.shape)
+    if coefs.shape != coef_shape:
+        raise RuntimeError(
+            'Coef shape is not correct, ' +
+            'expected: %s, ' % str(coef_shape) +
+            'was: %s.' % str(coefs.shape))
+
+
+def load_lr_model(empty_model, file_name):
+    print('Loading model from JSON.')
+    with open(file_name) as f:
+        model_load = json.load(f)
+
+    coef_dtype = model_load['coefficients']['dtype']
+    coef_shape = tuple(model_load['coefficients']['shape'])
+
+    coefs = np.array(
+        model_load['coefficients']['list'],
+        dtype=coef_dtype
+    ).reshape(coef_shape)
+
+    check_coef_load(coefs, coef_dtype, coef_shape)
+
+    empty_model.set_params(**model_load['parameters'])
+    empty_model.coef_ = coefs
+
+    return empty_model, model_load['results']

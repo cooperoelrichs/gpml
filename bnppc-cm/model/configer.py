@@ -16,9 +16,10 @@ class Configer(object):
     def __init__(self, config):
         self.project_dir = config['project_dir']
         self.data_dir = self.project_dir + config['data_dir']
+        self.model_dump_dir = self.data_dir + config['model_dump_dir']
         self.submission_file_name = (self.data_dir +
                                      config['submission_file_name'])
-        self.model_dump_file_name = (self.data_dir +
+        self.model_dump_file_name = (self.model_dump_dir +
                                      config['model_dump_file_name'])
 
         self.file_names = self.add_dir_to_names(

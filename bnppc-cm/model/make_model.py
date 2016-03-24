@@ -42,13 +42,13 @@ def train_and_validate_model():
     kf_results.print_mean_results()
 
     print('\nLocal validation.')
-    model_maker.evaluate_model(
+    results = model_maker.evaluate_model(
         X_train_local, y_train_local,
         X_test_local, y_test_local,
         lr
     )
 
-    model_maker.dump_sklearn_model(lr, config.model_dump_file_name)
+    model_maker.dump_lr_model(lr, config.model_dump_file_name, results)
     print('Finished.\n')
 
 
@@ -62,7 +62,8 @@ def make_a_submission():
         config.not_x_labels, config.y_label
     )
 
-    lr = model_maker.load_sklearn_model(config.model_dump_file_name)
+    lr = model_maker.empty_lr()
+    lr, _ = model_maker.load_lr_model(lr, config.model_dump_file_name)
     id_column = config.data_set_frames['testing_data_set']['ID']
     model_maker.make_and_save_submission(
         X_train, y_train,
