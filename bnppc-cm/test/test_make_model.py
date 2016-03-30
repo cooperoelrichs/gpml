@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/Users/cooperoelrichs/Projects/gpml/')
+sys.path.append('../')
 
 import unittest
 from model.make_model import (

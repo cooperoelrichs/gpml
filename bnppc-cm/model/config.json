@@ -1,6 +1,6 @@
 {
     "data_dir": "bnp-paribas-cardif-claims-management/",
-    "project_dir": "/Users/cooperoelrichs/Projects/Kaggle/",
+    "project_dir": "/Users/coelrichs/Projects/Kaggle/",
     "model_dump_dir": "model_dumps/",
     "submission_file_name": "submission.csv",
     "model_dump_file_name": "model_dump.json",
@@ -28,7 +28,7 @@
 
     "parameter_grids": {
         "LogisticRegression": [
-            {"C": [0.01, 0.1, 1], "penalty": ["l1", "l2"]}
+            {"C": [0.01, 0.1, 1], "penalty": ["l2"]}
         ],
         "SVC": [
             {

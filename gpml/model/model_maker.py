@@ -35,7 +35,7 @@ def basic_svc():
         C=0.1,
         kernel='rbf',
         probability=True,
-        class_weight='auto',
+        class_weight='balanced',
         max_iter=1000,
         random_state=1,
         tol=0.000001
@@ -132,7 +132,7 @@ def dump_model(model, file_name, results):
     model_dump = {}
     model_dump['model_type_name'] = type(model).__name__
     model_dump['parameters'] = model.get_params()
-    coefs = model.support_vectors_
+    coefs = model.coef_
     model_dump['coefficients'] = {
         'list': coefs.tolist(),
         'dtype': str(coefs.dtype),
@@ -159,6 +159,7 @@ def check_coef_load(coefs, coef_dtype, coef_shape):
 
 
 def load_model(file_name):
+    # TODO Probably need one of these for each model type...
     print('Loading model from JSON.')
     with open(file_name) as f:
         model_load = json.load(f)
@@ -173,7 +174,7 @@ def load_model(file_name):
 
     empty_model = make_model_of_type(model_load['model_type_name'])
     empty_model.set_params(**model_load['parameters'])
-    empty_model.support_vectors_ = coefs
+    empty_model.coef_ = coefs
 
     results = model_load['results']
     print('Loaded model results: %s' % str(results))
@@ -208,7 +209,7 @@ def check_for_edge_cases(param_grid, best_params):
             value = best_params[key]
             if (isinstance(value, numbers.Number) and
                     (value == max(options) or value == min(options))):
-                print(
+                raise ValueError(
                     'Chosen value for %s, of %s, has hit an edge of: %s' %
                     (key, str(value), str(options))
                 )

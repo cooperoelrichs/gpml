@@ -35,7 +35,7 @@ def train_and_validate_model():
     )
 
     print('\nModel building and cross validation.')
-    model = model_maker.basic_svc()
+    model = model_maker.basic_lr()
     param_grid = config.parameter_grids[type(model).__name__]
     model = model_maker.do_grid_search(
         model, param_grid, X_train_local, y_train_local)
@@ -65,20 +65,6 @@ def make_a_submission():
     print('Generating a submission.')
     config = configer.from_json('model/config.json')
     model, _ = model_maker.load_model(config.model_dump_file_name)
-
-    print('\nCheck local validation of loaded model.')
-    config.open_local_data_sets()
-    X_train_local, y_train_local, X_test_local, y_test_local = get_xs_and_ys(
-        config.local_data_set_frames['local_training_data_set'],
-        config.local_data_set_frames['local_testing_data_set'],
-        config.not_x_labels, config.y_label
-    )
-    results = model_maker.evaluate_model(
-        X_train_local, y_train_local,
-        X_test_local, y_test_local,
-        model
-    )
-    print(results)
 
     config.open_data_sets()
     X_train, y_train, X_submission, _ = get_xs_and_ys(
