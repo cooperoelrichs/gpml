@@ -177,7 +177,8 @@ def load_model(file_name):
     empty_model.coef_ = coefs
 
     results = model_load['results']
-    print('Loaded model results: %s' % str(results))
+    print('Loaded model results:')
+    print_dict_as_indented_list(results)
     return empty_model, results
 
 
@@ -188,6 +189,25 @@ def make_model_of_type(model_type_name):
         return basic_svc()
 
 
+def print_part_of_dict_as_indented_list(keys, dict_thing):
+    part_of_dict_thing = dict((key, dict_thing[key]) for key in keys)
+    print_dict_as_indented_list(part_of_dict_thing)
+
+
+def print_dict_as_indented_list(dict_thing):
+    for key, value in dict_thing.items():
+        if isinstance(value, str):
+            value_str = value
+        elif isinstance(value, numbers.Integral):  # Int and Bool
+            value_str = str(value)
+        elif isinstance(value, numbers.Real):  # (float)
+            value_str = '%.3f' % value
+        else:
+            raise RuntimeError('Type not supported: %s' % type(value))
+
+        print(' - %s: %s' % (key, value_str))
+
+
 def do_grid_search(model, param_grid, X, y):
     print('Running Grid Search.')
     gs = GridSearchCV(model, param_grid, scoring='log_loss', n_jobs=1, cv=5)
@@ -196,8 +216,8 @@ def do_grid_search(model, param_grid, X, y):
     best_params = best_est.get_params()
 
     for grid in param_grid:
-        for key in grid.keys():
-            print(' - Chosen %s: %s' % (key, str(best_params[key])))
+        print('Chosen parameters:')
+        print_part_of_dict_as_indented_list(grid.keys(), best_params)
 
     check_for_edge_cases(param_grid, best_params)
     return best_est
