@@ -24,7 +24,7 @@ def get_xs_and_ys(local_train, local_test, not_x_labels, y_label):
 
 
 def train_and_validate_model():
-    print('Train and validate a model aginst local data.')
+    print('\nTrain and validate a model aginst local data.')
     config = configer.from_json('model/config.json')
 
     config.open_local_data_sets()
@@ -58,7 +58,7 @@ def train_and_validate_model():
     )
 
     model_maker.dump_model(model, config.model_dump_file_name, results)
-    print('Finished.\n')
+    print('Finished.')
 
 
 def make_a_submission():
