@@ -19,7 +19,7 @@ def print_coefs(feature_names, model):
 def basic_lr():
     lr = LogisticRegression(
         penalty='l2',
-        C=0.1,
+        C=0.01,
         class_weight='balanced',
         max_iter=100,
         random_state=1,
@@ -82,9 +82,7 @@ class ValidationResults(object):
         predictions = model.predict_proba(X_test)
 
         acc = model.score(X_test, y_test)
-        ll = log_loss(y_test,
-                      predictions,
-                      eps=10 ^ -15)
+        ll = log_loss(y_test, predictions, eps=10 ^ -15)
         self.append(acc, ll)
 
     def get_mean_results(self):
@@ -96,7 +94,7 @@ class ValidationResults(object):
 
 def kfolds_evaluation(X, y, model):
     kfr = ValidationResults()
-    kf = KFold(y.shape[0], n_folds=5)
+    kf = KFold(y.shape[0], n_folds=3)
     for train_index, test_index in kf:
         kfr.add_validation_result(
             model,
@@ -196,21 +194,22 @@ def print_part_of_dict_as_indented_list(keys, dict_thing):
 
 def print_dict_as_indented_list(dict_thing):
     for key, value in dict_thing.items():
-        if isinstance(value, str):
-            value_str = value
-        elif isinstance(value, numbers.Integral):  # Int and Bool
-            value_str = str(value)
-        elif isinstance(value, numbers.Real):  # (float)
-            value_str = '%.3f' % value
-        else:
-            raise RuntimeError('Type not supported: %s' % type(value))
+        # if isinstance(value, str):
+        #     value_str = value
+        # elif isinstance(value, numbers.Integral):  # Int and Bool
+        #     value_str = str(value)
+        # elif isinstance(value, numbers.Real):  # (float)
+        #     value_str = '%.3f' % value
+        # else:
+        #     raise RuntimeError('Type not supported: %s' % type(value))
 
+        value_str = str(value)
         print(' - %s: %s' % (key, value_str))
 
 
 def do_grid_search(model, param_grid, X, y):
     print('Running Grid Search.')
-    gs = GridSearchCV(model, param_grid, scoring='log_loss', n_jobs=1, cv=5)
+    gs = GridSearchCV(model, param_grid, scoring='log_loss', n_jobs=1, cv=3)
     gs.fit(X, y)
     best_est = gs.best_estimator_
     best_params = best_est.get_params()
