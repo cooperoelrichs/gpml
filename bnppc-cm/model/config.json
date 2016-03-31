@@ -28,7 +28,7 @@
 
     "parameter_grids": {
         "LogisticRegression": [
-            {"C": [0.01, 0.1, 1], "penalty": ["l2"]}
+            {"C": [0.01, 0.1, 1], "penalty": ["l2", "l1"]}
         ],
         "SVC": [
             {

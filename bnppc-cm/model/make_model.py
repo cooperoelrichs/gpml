@@ -41,9 +41,9 @@ def train_and_validate_model():
         model, param_grid, X_train_local, y_train_local)
 
     # ... whats next?
+    #  - Other model types (SVM) - This time without weights?
     #  - Forums?
     #  - Feature engineerings?
-    #  - Other model types (SVM)?
     #  - Ensemble?
 
     kf_results = model_maker.kfolds_evaluation(

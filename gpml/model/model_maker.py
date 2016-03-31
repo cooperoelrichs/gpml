@@ -5,7 +5,7 @@ import numbers
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.cross_validation import KFold
-from sklearn.metrics import log_loss
+from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.externals import joblib
 from sklearn.grid_search import GridSearchCV
 from gpml.data_set import data_set_maker
@@ -18,12 +18,12 @@ def print_coefs(feature_names, model):
 
 def basic_lr():
     lr = LogisticRegression(
-        penalty='l2',
-        C=0.01,
-        class_weight='balanced',
+        penalty='l1',
+        C=0.1,
+        # class_weight='balanced',  # This ruins the accuracy and log loss
         max_iter=100,
         random_state=1,
-        solver='lbfgs',
+        # solver='lbfgs',
         tol=0.000001,
         # n_jobs=-1
     )
@@ -35,7 +35,7 @@ def basic_svc():
         C=0.1,
         kernel='rbf',
         probability=True,
-        class_weight='balanced',
+        # class_weight='balanced',
         max_iter=1000,
         random_state=1,
         tol=0.000001
@@ -44,21 +44,35 @@ def basic_svc():
 
 
 class ValidationResult(object):
-    def __init__(self, accuracy, log_loss):
+    def __init__(self, accuracy, log_loss, roc_auc, average_prediction,
+                 accuracy_for_ones, accuracy_for_zeros):
         self.acc = accuracy
         self.ll = log_loss
+        self.roc_auc = roc_auc
+        self.avg_p = average_prediction
+        self.acc_1s = accuracy_for_ones
+        self.acc_0s = accuracy_for_zeros
 
 
 class ValidationResults(object):
     def __init__(self):
         self.results = []
 
-    def append(self, acc, ll):
-        self.results.append(ValidationResult(acc, ll))
+    def append(self, acc, ll, roc_auc, avg_p, acc_1s, acc_0s):
+        self.results.append(ValidationResult(
+            acc, ll, roc_auc, avg_p, acc_1s, acc_0s
+        ))
 
     def print_results(self):
         for r in self.results:
-            print('Accuracy: %.3f, ll: %.3f' % (r.acc, r.ll))
+            print(', '.join([
+                'Accuracy: %.3f' % r.acc,
+                'LL: %.3f' % r.ll,
+                'ROC AUC: %.3f' % r.roc_auc,
+                'Avg P: %0.3f' % r.avg_p,
+                'Acc 1s: %0.3f' % r.acc_1s,
+                'Acc 0s: %0.3f' % r.acc_0s,
+            ]))
 
     def get_accuracies(self):
         return np.array([r.acc for r in self.results])
@@ -82,8 +96,12 @@ class ValidationResults(object):
         predictions = model.predict_proba(X_test)
 
         acc = model.score(X_test, y_test)
-        ll = log_loss(y_test, predictions, eps=10 ^ -15)
-        self.append(acc, ll)
+        acc_1s = model.score(X_test[y_test > 0.5], y_test[y_test > 0.5])
+        acc_0s = model.score(X_test[y_test < 0.5], y_test[y_test < 0.5])
+        ll = log_loss(y_test, predictions[:, 1], eps=10 ^ -15)
+        roc_auc = roc_auc_score(y_test,  predictions[:, 1])
+        avg_p = predictions[:, 1].mean()
+        self.append(acc, ll, roc_auc, avg_p, acc_1s, acc_0s)
 
     def get_mean_results(self):
         return {
