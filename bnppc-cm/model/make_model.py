@@ -1,5 +1,6 @@
 from gpml.model import model_maker
 from . import configer
+from .model_setup import LRModelSetup
 
 
 def get_x(df, not_x_labels):
@@ -23,9 +24,28 @@ def get_xs_and_ys(local_train, local_test, not_x_labels, y_label):
     return X_train, y_train, X_test, y_test
 
 
-def train_and_validate_model():
-    print('\nTrain and validate a model aginst local data.')
+def train_and_validate_svc_model():
+    pass
+
+
+def train_and_validate_lr_model():
     config = configer.from_json('model/config.json')
+    model = model_maker.basic_lr()
+    param_grid = config.parameter_grids[type(model).__name__]
+    model_setup = LRModelSetup(model, param_grid)
+    train_and_validate_model(model_setup, config)
+
+
+# def make_model_of_type(model_type_name):
+#     if model_type_name == 'LogisticRegression':
+#         return basic_lr()
+#     elif model_type_name == 'SVC':
+#         return basic_svc()
+
+
+def train_and_validate_model(model_setup, config):
+    print('\nTrain and validate a model aginst local data.')
+    model = model_setup.model
 
     config.open_local_data_sets()
     X_train_local, y_train_local, X_test_local, y_test_local = get_xs_and_ys(
@@ -35,10 +55,8 @@ def train_and_validate_model():
     )
 
     print('\nModel building and cross validation.')
-    model = model_maker.basic_lr()
-    param_grid = config.parameter_grids[type(model).__name__]
     model = model_maker.do_grid_search(
-        model, param_grid, X_train_local, y_train_local)
+        model, model_setup.parameter_grid, X_train_local, y_train_local)
 
     # ... whats next?
     #  - Other model types (SVM) - This time without weights?
@@ -57,12 +75,15 @@ def train_and_validate_model():
         model
     )
 
-    model_maker.dump_model(model, config.model_dump_file_name, results)
+    model_maker.dump_model(
+        model_setup.dump_model_to_json_obj(model),
+        config.model_dump_file_name, results
+    )
     print('Finished.')
 
 
 def make_a_submission():
-    print('Generating a submission.')
+    print('\nGenerating a submission.')
     config = configer.from_json('model/config.json')
     model, _ = model_maker.load_model(config.model_dump_file_name)
 
@@ -79,4 +100,4 @@ def make_a_submission():
         X_submission, id_column,
         model, config.submission_file_name
     )
-    print('Finished.\n')
+    print('Finished.')

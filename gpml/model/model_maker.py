@@ -20,7 +20,7 @@ def basic_lr():
     lr = LogisticRegression(
         penalty='l1',
         C=0.1,
-        # class_weight='balanced',  # This ruins the accuracy and log loss
+        # class_weight='balanced',  # This ruins both the acc and ll scores
         max_iter=100,
         random_state=1,
         # solver='lbfgs',
@@ -32,11 +32,11 @@ def basic_lr():
 
 def basic_svc():
     svc = SVC(
-        C=0.1,
-        kernel='rbf',
-        probability=True,
+        C=0.0001,
+        kernel='sigmoid',
+        probability=False,
         # class_weight='balanced',
-        max_iter=1000,
+        max_iter=100,
         random_state=1,
         tol=0.000001
     )
@@ -143,21 +143,12 @@ def make_and_save_submission(X_train, y_train,
     submission.to_csv(file_name, sep=',', index=False)
 
 
-def dump_model(model, file_name, results):
+def dump_model(model_json, file_name, results):
     print('Dumping model to JSON.')
-    model_dump = {}
-    model_dump['model_type_name'] = type(model).__name__
-    model_dump['parameters'] = model.get_params()
-    coefs = model.coef_
-    model_dump['coefficients'] = {
-        'list': coefs.tolist(),
-        'dtype': str(coefs.dtype),
-        'shape': coefs.shape
-    }
-    model_dump['results'] = results
+    model_json['results'] = results
 
     with open(file_name, 'w') as f:
-        json.dump(model_dump, f, sort_keys=True, indent=4)
+        json.dump(model_json, f, sort_keys=True, indent=4)
         f.write('\n')
 
 
@@ -196,13 +187,6 @@ def load_model(file_name):
     print('Loaded model results:')
     print_dict_as_indented_list(results)
     return empty_model, results
-
-
-def make_model_of_type(model_type_name):
-    if model_type_name == 'LogisticRegression':
-        return basic_lr()
-    elif model_type_name == 'SVC':
-        return basic_svc()
 
 
 def print_part_of_dict_as_indented_list(keys, dict_thing):
