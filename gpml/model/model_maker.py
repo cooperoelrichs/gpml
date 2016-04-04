@@ -17,6 +17,7 @@ def print_coefs(feature_names, model):
 
 
 def basic_lr():
+    # TODO: Move this to model_setup.py
     lr = LogisticRegression(
         penalty='l1',
         C=0.1,
@@ -31,12 +32,13 @@ def basic_lr():
 
 
 def basic_svc():
+    # TODO: Move this to model_setup.py
     svc = SVC(
         C=0.0001,
-        kernel='sigmoid',
-        probability=False,
+        kernel='linear',
+        probability=True,
         # class_weight='balanced',
-        max_iter=100,
+        max_iter=1000,
         random_state=1,
         tol=0.000001
     )
@@ -230,7 +232,9 @@ def check_for_edge_cases(param_grid, best_params):
             value = best_params[key]
             if (isinstance(value, numbers.Number) and
                     (value == max(options) or value == min(options))):
-                raise ValueError(
+                err_str = (
                     'Chosen value for %s, of %s, has hit an edge of: %s' %
                     (key, str(value), str(options))
                 )
+                print(err_str)
+                # raise ValueError(err_str)

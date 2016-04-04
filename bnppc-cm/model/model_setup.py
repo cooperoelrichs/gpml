@@ -19,7 +19,24 @@ class LRModelSetup(ModelSetup):
         model_dump = {}
         model_dump['model_type_name'] = type(model).__name__
         model_dump['parameters'] = model.get_params()
-        coefs = model.coefs_
+        coefs = model.coef_
+        model_dump['coefficients'] = {
+            'list': coefs.tolist(),
+            'dtype': str(coefs.dtype),
+            'shape': coefs.shape
+        }
+
+        return model_dump
+
+
+class SVCModelSetup(ModelSetup):
+    """Support Vector Classifier Model Setup."""
+
+    def dump_model_to_json_obj(self, model):
+        model_dump = {}
+        model_dump['model_type_name'] = type(model).__name__
+        model_dump['parameters'] = model.get_params()
+        coefs = model.support_vectors_
         model_dump['coefficients'] = {
             'list': coefs.tolist(),
             'dtype': str(coefs.dtype),

@@ -1,6 +1,6 @@
 from gpml.model import model_maker
 from . import configer
-from .model_setup import LRModelSetup
+from .model_setup import LRModelSetup, SVCModelSetup
 
 
 def get_x(df, not_x_labels):
@@ -25,15 +25,27 @@ def get_xs_and_ys(local_train, local_test, not_x_labels, y_label):
 
 
 def train_and_validate_svc_model():
-    pass
+    print('\nSVC Model.')
+    config = configer.from_json('model/config.json')
+    model = model_maker.basic_svc()
+    param_grid = config.parameter_grids[type(model).__name__]
+    model_setup = SVCModelSetup(model, param_grid)
+    model, results = train_and_validate_model(model_setup, config)
+
+    model_json = model_setup.dump_model_to_json_obj(model)
+    model_maker.dump_model(model_json, config.model_dump_file_name, results)
 
 
 def train_and_validate_lr_model():
+    print('\nLR Model.')
     config = configer.from_json('model/config.json')
     model = model_maker.basic_lr()
     param_grid = config.parameter_grids[type(model).__name__]
     model_setup = LRModelSetup(model, param_grid)
-    train_and_validate_model(model_setup, config)
+    model, results = train_and_validate_model(model_setup, config)
+
+    model_json = model_setup.dump_model_to_json_obj(model)
+    model_maker.dump_model(model_json, config.model_dump_file_name, results)
 
 
 def train_and_validate_model(model_setup, config):
@@ -69,11 +81,8 @@ def train_and_validate_model(model_setup, config):
         model
     )
 
-    model_maker.dump_model(
-        model_setup.dump_model_to_json_obj(model),
-        config.model_dump_file_name, results
-    )
     print('Finished.')
+    return model, results
 
 
 def make_a_submission():
