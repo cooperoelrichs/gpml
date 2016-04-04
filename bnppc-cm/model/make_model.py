@@ -36,13 +36,6 @@ def train_and_validate_lr_model():
     train_and_validate_model(model_setup, config)
 
 
-# def make_model_of_type(model_type_name):
-#     if model_type_name == 'LogisticRegression':
-#         return basic_lr()
-#     elif model_type_name == 'SVC':
-#         return basic_svc()
-
-
 def train_and_validate_model(model_setup, config):
     print('\nTrain and validate a model aginst local data.')
     model = model_setup.model
@@ -59,10 +52,11 @@ def train_and_validate_model(model_setup, config):
         model, model_setup.parameter_grid, X_train_local, y_train_local)
 
     # ... whats next?
-    #  - Other model types (SVM) - This time without weights?
+    #  - Other model types (SVM, ElasticNet, SGDClassifier)?
     #  - Forums?
-    #  - Feature engineerings?
-    #  - Ensemble?
+    #  - Feature engineering?
+    #  - Ensemble? - http://mlwave.com/kaggle-ensembling-guide/
+    #  - Remove outliers? - http://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html
 
     kf_results = model_maker.kfolds_evaluation(
         X_train_local, y_train_local, model)
