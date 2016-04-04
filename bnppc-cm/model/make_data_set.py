@@ -31,12 +31,14 @@ def extract_transform_load():
 
     data_set = data_set_maker.normalise_num_columns(data_set, ['ID', 'target'])
     data_set = data_set_maker.fill_nans_in_num_columns_with(data_set, 0)
-    data_set = data_set_maker.fill_nans_in_str_columns_with(data_set, '-')
+    # data_set = data_set_maker.fill_nans_in_str_columns_with(data_set, '-')
+    columns_before_dummies = data_set.columns
     data_set = data_set_maker.dummy_encode_str_columns(data_set)
+    dummy_columns = data_set.columns.difference(columns_before_dummies)
+    data_set = data_set_maker.scale_dummy_columns(data_set, dummy_columns)
 
     train = data_set.iloc[:num_train]
     test = data_set.iloc[num_train:]
-
     training_file_name = config.data_set_names['training_data_set']
     testing_file_name = config.data_set_names['testing_data_set']
     data_set_maker.check_and_save_to_hdf(train, training_file_name)
