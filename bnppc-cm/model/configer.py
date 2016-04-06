@@ -19,8 +19,8 @@ class Configer(object):
         self.model_dump_dir = self.data_dir + config['model_dump_dir']
         self.submission_file_name = (self.data_dir +
                                      config['submission_file_name'])
-        self.model_dump_file_name = (self.model_dump_dir +
-                                     config['model_dump_file_name'])
+        self.model_dump_file_names = self.add_dir_to_names(
+            config['model_dump_file_names'], self.model_dump_dir)
 
         self.file_names = self.add_dir_to_names(
             config['file_names'], self.data_dir)
@@ -34,6 +34,7 @@ class Configer(object):
 
         self.not_x_labels = config['not_x_labels']
         self.y_label = config['y_label']
+        self.columns_to_remove = config['columns_to_remove']
 
         self.parameter_grids = config['parameter_grids']
 

@@ -28,6 +28,7 @@ def extract_transform_load():
     data_set = pd.concat((train, test), axis=0, ignore_index=True)
     # Feature v22 has 15348 unique values
     data_set = data_set.drop('v22', axis=1)
+    data_set = data_set.drop(config.columns_to_remove, axis=1)
 
     data_set = data_set_maker.normalise_num_columns(data_set, ['ID', 'target'])
     data_set = data_set_maker.fill_nans_in_num_columns_with(data_set, 0)

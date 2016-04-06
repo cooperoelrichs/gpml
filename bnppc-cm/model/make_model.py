@@ -1,6 +1,7 @@
 from gpml.model import model_maker
 from . import configer
-from .model_setup import LRModelSetup, SVCModelSetup
+from .model_setup import (LRModelSetup, SVCModelSetup,
+                          SGDCModelSetup, XGBModelSetup)
 
 
 def get_x(df, not_x_labels):
@@ -24,31 +25,53 @@ def get_xs_and_ys(local_train, local_test, not_x_labels, y_label):
     return X_train, y_train, X_test, y_test
 
 
-def train_and_validate_svc_model():
-    print('\nSVC Model.')
+def train_and_validate_sgdc():
+    model_name = 'SGDClassifier'
+    print('\n%s Model.' % model_name)
     config = configer.from_json('model/config.json')
-    model = model_maker.basic_svc()
-    param_grid = config.parameter_grids[type(model).__name__]
-    model_setup = SVCModelSetup(model, param_grid)
-    model, results = train_and_validate_model(model_setup, config)
-
-    model_json = model_setup.dump_model_to_json_obj(model)
-    model_maker.dump_model(model_json, config.model_dump_file_name, results)
+    param_grid = config.parameter_grids[model_name]
+    model_setup = SGDCModelSetup(param_grid)
+    train_and_validate_simple_model(model_name, model_setup, config)
 
 
-def train_and_validate_lr_model():
-    print('\nLR Model.')
+def train_and_validate_svc():
+    model_name = 'SVC'
+    print('\n%s Model.' % model_name)
     config = configer.from_json('model/config.json')
-    model = model_maker.basic_lr()
-    param_grid = config.parameter_grids[type(model).__name__]
-    model_setup = LRModelSetup(model, param_grid)
-    model, results = train_and_validate_model(model_setup, config)
-
-    model_json = model_setup.dump_model_to_json_obj(model)
-    model_maker.dump_model(model_json, config.model_dump_file_name, results)
+    param_grid = config.parameter_grids[model_name]
+    model_setup = SVCModelSetup(param_grid)
+    train_and_validate_simple_model(model_name, model_setup, config)
 
 
-def train_and_validate_model(model_setup, config):
+def train_and_validate_lr():
+    model_name = 'LogisticRegression'
+    print('\n%s Model.' % model_name)
+    config = configer.from_json('model/config.json')
+    param_grid = config.parameter_grids[model_name]
+    model_setup = LRModelSetup(param_grid)
+    train_and_validate_simple_model(model_name, model_setup, config)
+
+
+def train_and_validate_xgb():
+    model_name = 'XGBoost'
+    print('\n%s Model.' % model_name)
+    config = configer.from_json('model/config.json')
+    param_grid = config.parameter_grids[model_name]
+    model_setup = XGBModelSetup(param_grid)
+    model, results = train_and_validate(model_setup, config)
+    # model_setup.plot_stuf(model)
+    model_setup.dump_model(
+        model, results, config.model_dump_file_names[model_name])
+
+
+# def train_and_validate_simple_model(model_name, model_setup, config):
+#     model, results = train_and_validate(model_setup, config)
+#     model_json = model_setup.dump_model_to_json_obj(model)
+#     model_maker.dump_model(
+#         model_json, config.model_dump_file_names[model_name], results)
+
+
+def train_and_validate(model_setup, config):
     print('\nTrain and validate a model aginst local data.')
     model = model_setup.model
 
@@ -68,7 +91,8 @@ def train_and_validate_model(model_setup, config):
     #  - Forums?
     #  - Feature engineering?
     #  - Ensemble? - http://mlwave.com/kaggle-ensembling-guide/
-    #  - Remove outliers? - http://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html
+    #  - Remove outliers? - http://scikit-learn.org/stable/modules/generated/
+    #                       sklearn.svm.OneClassSVM.html
 
     kf_results = model_maker.kfolds_evaluation(
         X_train_local, y_train_local, model)
@@ -85,10 +109,16 @@ def train_and_validate_model(model_setup, config):
     return model, results
 
 
-def make_a_submission():
-    print('\nGenerating a submission.')
+def make_sgdc_submission():
+    model_setup = SGDCModelSetup(None)
+    make_a_submission(model_setup)
+
+
+def make_a_submission(model_setup):
+    print('\n%s submission.' % model_setup.name)
     config = configer.from_json('model/config.json')
-    model, _ = model_maker.load_model(config.model_dump_file_name)
+    model, _ = model_setup.load_model_from_json(
+        config.model_dump_file_names[model_setup.name])
 
     config.open_data_sets()
     X_train, y_train, X_submission, _ = get_xs_and_ys(

@@ -1,48 +1,15 @@
 import numpy as np
 import pandas as pd
-import json
 import numbers
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
+import json
 from sklearn.cross_validation import KFold
 from sklearn.metrics import log_loss, roc_auc_score
-from sklearn.externals import joblib
 from sklearn.grid_search import GridSearchCV
-from gpml.data_set import data_set_maker
 
 
 def print_coefs(feature_names, model):
     for feature, coef in zip(feature_names, model.coef_[0]):
         print('%s - %.3f' % (feature, coef))
-
-
-def basic_lr():
-    # TODO: Move this to model_setup.py
-    lr = LogisticRegression(
-        penalty='l1',
-        C=0.1,
-        # class_weight='balanced',  # This ruins both the acc and ll scores
-        max_iter=100,
-        random_state=1,
-        # solver='lbfgs',
-        tol=0.000001,
-        # n_jobs=-1
-    )
-    return lr
-
-
-def basic_svc():
-    # TODO: Move this to model_setup.py
-    svc = SVC(
-        C=0.0001,
-        kernel='linear',
-        probability=True,
-        # class_weight='balanced',
-        max_iter=1000,
-        random_state=1,
-        tol=0.000001
-    )
-    return svc
 
 
 class ValidationResult(object):
@@ -101,7 +68,7 @@ class ValidationResults(object):
         acc_1s = model.score(X_test[y_test > 0.5], y_test[y_test > 0.5])
         acc_0s = model.score(X_test[y_test < 0.5], y_test[y_test < 0.5])
         ll = log_loss(y_test, predictions[:, 1], eps=10 ^ -15)
-        roc_auc = roc_auc_score(y_test,  predictions[:, 1])
+        roc_auc = roc_auc_score(y_test, predictions[:, 1])
         avg_p = predictions[:, 1].mean()
         self.append(acc, ll, roc_auc, avg_p, acc_1s, acc_0s)
 
@@ -152,43 +119,6 @@ def dump_model(model_json, file_name, results):
     with open(file_name, 'w') as f:
         json.dump(model_json, f, sort_keys=True, indent=4)
         f.write('\n')
-
-
-def check_coef_load(coefs, coef_dtype, coef_shape):
-    if coefs.dtype != coef_dtype:
-        raise RuntimeError(
-            'Coef dtype is not correct, ' +
-            'expected: %s, ' % coef_dtype +
-            'was: %s.' % coefs.shape)
-    if coefs.shape != coef_shape:
-        raise RuntimeError(
-            'Coef shape is not correct, ' +
-            'expected: %s, ' % str(coef_shape) +
-            'was: %s.' % str(coefs.shape))
-
-
-def load_model(file_name):
-    # TODO Probably need one of these for each model type...
-    print('Loading model from JSON.')
-    with open(file_name) as f:
-        model_load = json.load(f)
-
-    coef_dtype = model_load['coefficients']['dtype']
-    coef_shape = tuple(model_load['coefficients']['shape'])
-    coefs = np.array(
-        model_load['coefficients']['list'],
-        dtype=coef_dtype
-    ).reshape(coef_shape)
-    check_coef_load(coefs, coef_dtype, coef_shape)
-
-    empty_model = make_model_of_type(model_load['model_type_name'])
-    empty_model.set_params(**model_load['parameters'])
-    empty_model.coef_ = coefs
-
-    results = model_load['results']
-    print('Loaded model results:')
-    print_dict_as_indented_list(results)
-    return empty_model, results
 
 
 def print_part_of_dict_as_indented_list(keys, dict_thing):
