@@ -34,20 +34,46 @@ class ValidationResults(object):
 
     def print_results(self):
         for r in self.results:
-            print(', '.join([
-                'Accuracy: %.3f' % r.acc,
-                'LL: %.3f' % r.ll,
-                'ROC AUC: %.3f' % r.roc_auc,
-                'Avg P: %0.3f' % r.avg_p,
-                'Acc 1s: %0.3f' % r.acc_1s,
-                'Acc 0s: %0.3f' % r.acc_0s,
-            ]))
+            self.print_result(r)
+
+    @staticmethod
+    def print_result(r):
+        print(', '.join([
+            'Accuracy: %.3f' % r.acc,
+            'LL: %.3f' % r.ll,
+            'ROC AUC: %.3f' % r.roc_auc,
+            'Avg P: %0.3f' % r.avg_p,
+            'Acc 1s: %0.3f' % r.acc_1s,
+            'Acc 0s: %0.3f' % r.acc_0s,
+        ]))
 
     def get_accuracies(self):
         return np.array([r.acc for r in self.results])
 
     def get_log_losses(self):
         return np.array([r.ll for r in self.results])
+
+    def get_roc_aucs(self):
+        return np.array([r.roc_auc for r in self.results])
+
+    def get_average_predictions(self):
+        return np.array([r.avg_p for r in self.results])
+
+    def get_1s_accuracries(self):
+        return np.array([r.acc_1s for r in self.results])
+
+    def get_0s_accuracries(self):
+        return np.array([r.acc_0s for r in self.results])
+
+    def get_mean_results(self):
+        return {
+            'acc': self.get_accuracies().mean(),
+            'll': self.get_log_losses().mean(),
+            'roc_auc': self.get_roc_aucs().mean(),
+            'avg_p': self.get_average_predictions().mean(),
+            'acc_1s': self.get_1s_accuracries().mean(),
+            'acc_0s': self.get_0s_accuracries().mean()
+        }
 
     def print_mean_results(self):
         accuracies = self.get_accuracies()
@@ -58,9 +84,8 @@ class ValidationResults(object):
         print("Mean LL: %0.3f (+/- %0.3f)"
               % (log_losses.mean(), log_losses.std() * 2))
 
-    def add_validation_result(self, model,
-                              X_train, y_train,
-                              X_test, y_test):
+    def validate_model_and_add_result(
+            self, model, X_train, y_train, X_test, y_test, verbose=False):
         model.fit(X_train, y_train)
         predictions = model.predict_proba(X_test)
 
@@ -72,21 +97,19 @@ class ValidationResults(object):
         avg_p = predictions[:, 1].mean()
         self.append(acc, ll, roc_auc, avg_p, acc_1s, acc_0s)
 
-    def get_mean_results(self):
-        return {
-            'accuracy': self.get_accuracies().mean(),
-            'log_loss': self.get_log_losses().mean()
-        }
+        if verbose:
+            self.print_result(self.results[-1])
 
 
 def kfolds_evaluation(X, y, model):
     kfr = ValidationResults()
     kf = KFold(y.shape[0], n_folds=3)
     for train_index, test_index in kf:
-        kfr.add_validation_result(
+        kfr.validate_model_and_add_result(
             model,
             X.values[train_index, :], y.values[train_index],
-            X.values[test_index], y.values[test_index]
+            X.values[test_index], y.values[test_index],
+            verbose=True
         )
 
     return kfr
@@ -96,9 +119,15 @@ def evaluate_model(X_train, y_train,
                    X_test, y_test,
                    model):
     kfr = ValidationResults()
-    kfr.add_validation_result(model, X_train, y_train, X_test, y_test)
+    kfr.validate_model_and_add_result(model, X_train, y_train, X_test, y_test)
     kfr.print_results()
     return kfr.get_mean_results()
+
+
+def print_result_from_dict(result_dict):
+    kfr = ValidationResults()
+    kfr.append(**result_dict)
+    kfr.print_results()
 
 
 def make_and_save_submission(X_train, y_train,
@@ -143,7 +172,8 @@ def print_dict_as_indented_list(dict_thing):
 
 def do_grid_search(model, param_grid, X, y):
     print('Running Grid Search.')
-    gs = GridSearchCV(model, param_grid, scoring='log_loss', n_jobs=1, cv=3)
+    gs = GridSearchCV(model, param_grid, scoring='log_loss', n_jobs=1, cv=3,
+                      verbose=3)
     gs.fit(X, y)
     best_est = gs.best_estimator_
     best_params = best_est.get_params()

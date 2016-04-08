@@ -36,7 +36,7 @@
         "LogisticRegression": "model_dump_lr.json",
         "SVC": "model_dump_svc.json",
         "SGDClassifier": "model_dump_sgdc.json",
-        "XGBoost": "model_dump_xgb.model"
+        "XGBClassifier": "model_dump_xgb.model"
     },
 
     "parameter_grids": {
@@ -59,22 +59,22 @@
             "l1_ratio": [0, 0.1, 1]
         }],
 
-        "XGBoost": [{
-            "n_estimators": [500],
-            "learning_rate": [0.1, 0.01, 0.001],
-            "max_depth": [5, 9, 11, 13, 20],
-            "min_child_weight": [0.1, 1, 10, 100],
-            "subsample": [0.5, 0.9, 0.96, 1],
-            "colsample_bytree": [0.1, 0.4, 0.45, 0.5, 0.9],
+        "XGBClassifier": [{
+            "n_estimators": [1500],
+            "learning_rate": [0.01],
+            "max_depth": [5, 11, 20],
+            "min_child_weight": [1, 100],
+            "subsample": [0.5, 0.96],
+            "colsample_bytree": [0.1, 0.45, 0.9],
 
-            "silent": [false],
+            "silent": [true],
             "objective": ["binary:logistic"],
-            "nthread": [-1],
+            "nthread": [-2],
             "gamma": [1.0],
             "max_delta_step": [1],
             "colsample_bylevel": [1.0],
-            "reg_alpha": [0, 1.0, 2, 10],
-            "reg_lambda": [0, 1.0, 2, 10]
+            "reg_alpha": [1.0],
+            "reg_lambda": [1.0]
         }]
     }
 }

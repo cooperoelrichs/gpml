@@ -1,10 +1,11 @@
 import json
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.svm import SVC
 from gpml.model import model_maker
 from xgboost.sklearn import XGBClassifier
-import xgboost
+import xgboost as xgb
 import matplotlib.pyplot as plt
 
 
@@ -18,8 +19,8 @@ class ModelSetup(object):
 
     def json_load(self, file_name):
         with open(file_name) as f:
-            model_load = json.load(f)
-        return model_load
+            obj = json.load(f)
+        return obj
 
     @staticmethod
     def json_dump(obj, file_name):
@@ -167,23 +168,31 @@ class SGDCModelSetup(ModelSetup):
 class XGBModelSetup(ModelSetup):
     """XGBoost Model Setup."""
 
+    def __init__(self, parameter_grid):
+        # XGBoost multi-thread support
+        # import os
+        # from multiprocessing import set_start_method
+
+        # os.environ["OMP_NUM_THREADS"] = "7"
+        super().__init__(parameter_grid)
+
     @staticmethod
     def basic_model():
         xgb = XGBClassifier(
             max_depth=11,
             learning_rate=0.01,  # Boosting learning rate (xgb's "eta")
-            n_estimators=2000,  # num_boost_round
+            n_estimators=1500,  # num_boost_round
             # silent=False,
             objective='binary:logistic',
             nthread=-1,
-            # gamma=1.0,
+            gamma=1.0,
             min_child_weight=1,
-            # max_delta_step=1,
+            max_delta_step=1,
             subsample=0.96,
             colsample_bytree=0.45,
-            # colsample_bylevel=1.0,
-            # reg_alpha=1.0,  # (xgb's alpha), L2 regularization term
-            # reg_lambda=1.0,  # (xgb's lambda), L1 regularization term
+            colsample_bylevel=1.0,
+            reg_alpha=1.0,  # (xgb's alpha), L2 regularization term
+            reg_lambda=1.0,  # (xgb's lambda), L1 regularization term
             # scale_pos_weight=1.0,
             # base_score=0.5,
             # seed=1,
@@ -191,27 +200,11 @@ class XGBModelSetup(ModelSetup):
         )
 
         # eval_metric: ['error', 'logloss', 'auc', 'mae']
-
-        # max_depth=3,
-        # learning_rate=0.1,
-        # n_estimators=100,
-        # silent=True,
-        # objective="binary:logistic",
-        # nthread=-1,
-        # gamma=0,
-        # min_child_weight=1,
-        # max_delta_step=0,
-        # subsample=1,
-        # colsample_bytree=1,
-        # colsample_bylevel=1,
-        # reg_alpha=0,
-        # reg_lambda=1,
-        # scale_pos_weight=1,
-        # base_score=0.5,
-        # seed=0,
-        # missing=None
-
         return xgb
+
+    @staticmethod
+    def empty_booster():
+        return xgb.Booster()
 
     def dump_model(self, model, results, file_name):
         model._Booster.save_model(file_name)
@@ -221,8 +214,33 @@ class XGBModelSetup(ModelSetup):
         self.json_dump(results, results_file_name)
 
     @staticmethod
-    def plot_stuf(model):
-        f, axes = plt.subplots(2, 1)
-        axes[0] = xgboost.plot_importance(model._Booster)
-        axes[1] = xgboost.plot_tree(model._Booster, num_trees=2)
-        plt.show()
+    def plot_stuff(model, dir):
+        # xgboost.plot_importance(model._Booster)
+        importance = model._Booster.get_fscore()
+        # df = pd.DataFrame(importance, columns=['feature', 'fscore'])
+        df = pd.DataFrame.from_dict(importance, orient='index')
+        df.columns = ['fscore']
+        df['feature'] = df.index
+        df = df.sort_values(by='fscore')
+        df = df[-50:]
+
+        plt.figure()
+        df.plot(kind='barh', x='feature', y='fscore',
+                legend=False, figsize=(6, 10))
+        plt.title('XGBoost Feature Importance')
+        plt.xlabel('Importance')
+        plt.gcf().savefig(dir + 'xgb_feature_importance.png')
+
+        # xgboost.plot_tree(model._Booster, num_trees=2)
+        # plt.savefig(dir + 'xgb_tree.png')
+
+    def load_model(self, file_name):
+        model = self.basic_model()
+        model._Booster = self.empty_booster()
+        model._Booster.load_model(file_name)
+        print('Parameters of the loaded model:')
+        model_maker.print_dict_as_indented_list(model.get_params())
+        results_file_name = file_name.replace('.model', '_results.json')
+        results = self.json_load(results_file_name)
+        model_maker.print_result_from_dict(results)
+        return model, results
