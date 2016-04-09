@@ -181,7 +181,7 @@ class XGBModelSetup(ModelSetup):
         xgb = XGBClassifier(
             max_depth=11,
             learning_rate=0.01,  # Boosting learning rate (xgb's "eta")
-            n_estimators=1500,  # num_boost_round
+            n_estimators=2,  # num_boost_round
             # silent=False,
             objective='binary:logistic',
             nthread=-1,

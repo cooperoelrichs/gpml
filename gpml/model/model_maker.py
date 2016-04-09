@@ -70,9 +70,11 @@ class ValidationResults(object):
             'acc': self.get_accuracies().mean(),
             'll': self.get_log_losses().mean(),
             'roc_auc': self.get_roc_aucs().mean(),
-            'avg_p': self.get_average_predictions().mean(),
             'acc_1s': self.get_1s_accuracries().mean(),
-            'acc_0s': self.get_0s_accuracries().mean()
+            'acc_0s': self.get_0s_accuracries().mean(),
+
+            # We can JSON seralize float64 but not float32.
+            'avg_p': np.float64(self.get_average_predictions().mean())
         }
 
     def print_mean_results(self):

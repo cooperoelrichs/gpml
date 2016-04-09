@@ -53,7 +53,7 @@ def train_and_validate_lr():
 
 
 def train_and_validate_xgb():
-    model_name = 'XGBoost'
+    model_name = 'XGBClassifier'
     print('\n%s Model.' % model_name)
     config = configer.from_json('model/config.json')
     param_grid = config.parameter_grids[model_name]
@@ -89,8 +89,8 @@ def train_and_validate(model_setup, config):
     # 4. Ensemble.
     # 5. Feature engineer?
 
-    model = model_maker.do_grid_search(
-        model, model_setup.parameter_grid, X_train_local, y_train_local)
+    # model = model_maker.do_grid_search(
+    #     model, model_setup.parameter_grid, X_train_local, y_train_local)
 
     kf_results = model_maker.kfolds_evaluation(
         X_train_local, y_train_local, model)
