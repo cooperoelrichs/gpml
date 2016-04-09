@@ -1,6 +1,6 @@
 {
     "data_dir": "bnp-paribas-cardif-claims-management/",
-    "project_dir": "/Users/coelrichs/Projects/Kaggle/",
+    "project_dir": "/home/docker-user/Projects/Kaggle/",
     "model_dump_dir": "model_dumps/",
     "submission_file_name": "submission.csv",
 
