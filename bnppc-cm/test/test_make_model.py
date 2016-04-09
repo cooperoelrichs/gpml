@@ -23,7 +23,7 @@ class TestMakeModel(unittest.TestCase):
         # train_and_validate_sgdc()
         # make_sgdc_submission()
         train_and_validate_xgb()
-        # make_xgb_submission()
+        make_xgb_submission()
 
     # def test_make_lr_model():
     #     train_and_validate_lr_model()
