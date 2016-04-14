@@ -3,8 +3,9 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.svm import SVC
+from sklearn.ensemble import ExtraTreesClassifier
 from gpml.model import model_maker
-from xgboost.sklearn import XGBClassifier
+from gpml.xgboost_mod.improved_early_stopping import XGBCEarlyStoppingCV
 import xgboost as xgb
 import matplotlib.pyplot as plt
 
@@ -12,10 +13,9 @@ import matplotlib.pyplot as plt
 class ModelSetup(object):
     """Handle model specific operations."""
 
-    def __init__(self, parameter_grid):
+    def __init__(self, config):
         self.model = self.basic_model()
-        self.parameter_grid = parameter_grid
-        self.name = type(self.model).__name__
+        self.parameter_grid = config.parameter_grids[self.name]
 
     def json_load(self, file_name):
         with open(file_name) as f:
@@ -178,28 +178,26 @@ class XGBModelSetup(ModelSetup):
 
     @staticmethod
     def basic_model():
-        xgb = XGBClassifier(
-            max_depth=11,
+        xgb = XGBCEarlyStoppingCV(
+            max_depth=9,
             learning_rate=0.01,  # Boosting learning rate (xgb's "eta")
-            n_estimators=2,  # num_boost_round
+            n_estimators=10000,  # num_boost_round
             # silent=False,
             objective='binary:logistic',
             nthread=-1,
-            gamma=1.0,
-            min_child_weight=1,
+            gamma=2,
+            min_child_weight=10,
             max_delta_step=1,
             subsample=0.96,
             colsample_bytree=0.45,
-            colsample_bylevel=1.0,
-            reg_alpha=1.0,  # (xgb's alpha), L2 regularization term
-            reg_lambda=1.0,  # (xgb's lambda), L1 regularization term
+            colsample_bylevel=1,
+            reg_alpha=1,  # (xgb's alpha), L2 regularization term
+            reg_lambda=1,  # (xgb's lambda), L1 regularization term
             # scale_pos_weight=1.0,
             # base_score=0.5,
             # seed=1,
             # missing=None
         )
-
-        # eval_metric: ['error', 'logloss', 'auc', 'mae']
         return xgb
 
     @staticmethod
@@ -243,4 +241,51 @@ class XGBModelSetup(ModelSetup):
         results_file_name = file_name.replace('.model', '_results.json')
         results = self.json_load(results_file_name)
         model_maker.print_result_from_dict(results)
+        return model, results
+
+
+class ETCModelSetup(ModelSetup):
+    """Extra Trees Classifier Model Setup."""
+
+    def __init__(self, config):
+        self.name = 'ExtraTreesClassifier'
+        super().__init__(config)
+
+    @staticmethod
+    def basic_model():
+        etc = ExtraTreesClassifier(
+            n_estimators=1200,
+            max_features=30,
+            criterion='entropy',
+            min_samples_split=2,
+            max_depth=30,
+            min_samples_leaf=2,
+            n_jobs=-1,
+            verbose=0
+        )
+        return etc
+
+    @staticmethod
+    def empty_booster():
+        raise NotImplementedError()
+
+    def dump_model(self, model, results, file_name):
+        model_json = {
+            'model_type_name': type(model).__name__,
+            'parameters': model.get_params(),
+            'results': results,
+        }
+
+        self.json_dump(model_json, file_name)
+
+        results_file_name = file_name.replace('.json', '_results.json')
+        self.json_dump(results, results_file_name)
+
+    def load_model(self, file_name):
+        model_dump = self.json_load(file_name)
+        results = model_dump['results']
+        print('Loaded model results:')
+        model_maker.print_dict_as_indented_list(results)
+        model = self.basic_model()
+        model.set_params(**model_dump['parameters'])
         return model, results

@@ -87,8 +87,12 @@ class ValidationResults(object):
               % (log_losses.mean(), log_losses.std() * 2))
 
     def validate_model_and_add_result(
-            self, model, X_train, y_train, X_test, y_test, verbose=False):
-        model.fit(X_train, y_train)
+            self, model, X_train, y_train, X_test, y_test,
+            fitting_parameters, verbose=False):
+        model.fit(
+            X_train, y_train,
+            **fitting_parameters
+        )
         predictions = model.predict_proba(X_test)
 
         acc = model.score(X_test, y_test)
@@ -103,7 +107,7 @@ class ValidationResults(object):
             self.print_result(self.results[-1])
 
 
-def kfolds_evaluation(X, y, model):
+def kfolds_evaluation(X, y, model, fitting_parameters):
     kfr = ValidationResults()
     kf = KFold(y.shape[0], n_folds=3)
     for train_index, test_index in kf:
@@ -111,6 +115,7 @@ def kfolds_evaluation(X, y, model):
             model,
             X.values[train_index, :], y.values[train_index],
             X.values[test_index], y.values[test_index],
+            fitting_parameters,
             verbose=True
         )
 
@@ -119,9 +124,10 @@ def kfolds_evaluation(X, y, model):
 
 def evaluate_model(X_train, y_train,
                    X_test, y_test,
-                   model):
+                   model, fitting_parameters):
     kfr = ValidationResults()
-    kfr.validate_model_and_add_result(model, X_train, y_train, X_test, y_test)
+    kfr.validate_model_and_add_result(model, X_train, y_train, X_test, y_test,
+                                      fitting_parameters)
     kfr.print_results()
     return kfr.get_mean_results()
 
@@ -134,12 +140,17 @@ def print_result_from_dict(result_dict):
 
 def make_and_save_submission(X_train, y_train,
                              X_test, id_column,
-                             model, file_name):
-    model.fit(X_train, y_train)
+                             model, fitting_parameters, file_name):
+    model.fit(
+        X_train, y_train,
+        **fitting_parameters
+    )
+
     predictions = model.predict_proba(X_test)
     predictions = pd.Series(predictions[:, 1], name='PredictedProb',
                             index=id_column.index)
     submission = pd.concat((id_column, predictions), axis=1)
+    print('\nSaving submission file: %s' % file_name)
     submission.to_csv(file_name, sep=',', index=False)
 
 
@@ -174,8 +185,17 @@ def print_dict_as_indented_list(dict_thing):
 
 def do_grid_search(model, param_grid, X, y):
     print('Running Grid Search.')
-    gs = GridSearchCV(model, param_grid, scoring='log_loss', n_jobs=1, cv=3,
-                      verbose=3)
+    gs = GridSearchCV(
+        model, param_grid, scoring='log_loss', n_jobs=1, cv=1,
+        # We can't use cv=1, this complicates things...
+        verbose=10,
+        fit_params={
+            'eval_metric': 'logloss',
+            'early_stopping_rounds': 50,
+            'nfold': 3,
+            'verbose': False
+        }
+    )
     gs.fit(X, y)
     best_est = gs.best_estimator_
     best_params = best_est.get_params()

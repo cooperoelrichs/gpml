@@ -1,6 +1,6 @@
 {
     "data_dir": "bnp-paribas-cardif-claims-management/",
-    "project_dir": "/home/docker-user/Projects/Kaggle/",
+    "project_dir": "/Users/coelrichs/Projects/Kaggle/",
     "model_dump_dir": "model_dumps/",
     "submission_file_name": "submission.csv",
 
@@ -36,7 +36,20 @@
         "LogisticRegression": "model_dump_lr.json",
         "SVC": "model_dump_svc.json",
         "SGDClassifier": "model_dump_sgdc.json",
-        "XGBClassifier": "model_dump_xgb.model"
+        "XGBClassifier": "model_dump_xgb.model",
+        "XGBCEarlyStoppingCV": "model_dump_xgb.model",
+        "ExtraTreesClassifier": "model_dump_xgb.json"
+    },
+
+    "fitting_parameters": {
+        "XGBClassifier": {
+            "eval_metric": "logloss",
+            "early_stopping_rounds": 10,
+            "nfold": 3,
+            "verbose": true
+        },
+
+        "ExtraTreesClassifier": {}
     },
 
     "parameter_grids": {
@@ -75,6 +88,8 @@
             "colsample_bylevel": [1],
             "reg_alpha": [1],
             "reg_lambda": [1]
-        }]
+        }],
+
+        "ExtraTreesClassifier": [{}]
     }
 }

@@ -37,6 +37,7 @@ class Configer(object):
         self.columns_to_remove = config['columns_to_remove']
 
         self.parameter_grids = config['parameter_grids']
+        self.fitting_parameters = config['fitting_parameters']
 
     def add_dir_to_names(self, names, dir):
         names = dict([(name, dir + file_name)
