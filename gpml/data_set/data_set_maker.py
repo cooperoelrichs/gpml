@@ -2,9 +2,12 @@ import pandas as pd
 from sklearn.cross_validation import train_test_split
 
 
-def check_and_save_to_hdf(df, file_name):
-    if pd.isnull(df.values).any():
-        raise RuntimeError('df contains NaNs - %s' % file_name)
+def check_and_save_to_hdf(df, file_name, meta_columns):
+    if pd.isnull(df.drop(meta_columns, axis=1).values).any():
+        raise RuntimeError(
+            'df contains NaNs in these columns: %s'
+            % str(get_columns_with_na(df.drop(meta_columns, axis=1)))
+        )
     print('Saving HDF: %s' % file_name)
     save_hdf(df, file_name)
 
@@ -25,8 +28,8 @@ def split_and_save_local_data(data, test_size,
     print('Local Train shape: %i, %i' % train.shape)
     print('Local Test shape:  %i, %i' % test.shape)
 
-    check_and_save_to_hdf(train, train_file_name)
-    check_and_save_to_hdf(test, test_file_name)
+    check_and_save_to_hdf(train, train_file_name, [])
+    check_and_save_to_hdf(test, test_file_name, [])
 
 
 def get_num_columns(df):
@@ -47,15 +50,20 @@ def get_str_columns(df):
 def normalise_num_columns(df, non_feature_columns):
     num_columns = get_num_columns(df)
     feature_num_columns = num_columns.difference(non_feature_columns)
-
     df[feature_num_columns] = df[feature_num_columns].apply(
         lambda x: (x - x.mean()) / x.std()
     )
     return df
 
 
-def fill_nans_in_num_columns_with(df, this):
-    num_columns = get_num_columns(df)
+def fill_nans_in_num_columns_with(df, this, meta_columns):
+    num_columns = get_num_columns(df).difference(meta_columns)
+    print('Filling Nans with %s, currrent data range is: %0.2f - %0.2f'
+          % (
+              str(this),
+              df[num_columns].min(axis=0).min(),
+              df[num_columns].max(axis=0).max()
+          ))
     df = fill_nans_in_these_columns_with(df, num_columns, this)
     return df
 
@@ -86,42 +94,57 @@ def get_dummies(df, drop_first, dummy_na):
     )
 
 
-def dummy_encode_str_columns(df):
+def seperate_categoricals(df, categorical_columns):
+    if categorical_columns.size == 0:
+        print('Note: There are no categorical columns!')
+    categoricals = df[categorical_columns]
+    remaining = df.drop(categorical_columns, axis=1)
+    return remaining, categoricals
+
+
+def dummy_encode(df):
     """
-    Dummy encode str columns, assuming na is important.
+    Dummy encode df.
 
     1. Drop one category from each column.
     2. Assume na is important, and choose it as the dropped value if it
        is present in a columns.
     3. If na is not present in a column then drop the first category.
     """
-    str_columns = get_str_columns(df)
-    str_columns_with_na = get_columns_with_na(df[str_columns])
-    str_columns_without_na = str_columns.difference(str_columns_with_na)
+    columns_with_na = get_columns_with_na(df)
+    columns_without_na = df.columns.difference(columns_with_na)
 
     # Drop na instead of the first category
     dummies_dropping_na = get_dummies(
-        df[str_columns_with_na], drop_first=False, dummy_na=False)
+        df[columns_with_na], drop_first=False, dummy_na=False)
 
     # Drop first
     dummies_dropping_first = get_dummies(
-        df[str_columns_without_na], drop_first=True, dummy_na=False)
+        df[columns_without_na], drop_first=True, dummy_na=False)
 
     # memory_usage = dummies.memory_usage(index=True) / 1024 ^ 3
     # print('Memory size of dummies (GB): %0.3f' % memory_usage)
 
-    df = pd.concat(
+    dummies = pd.concat(
         [
-            df[df.columns.difference(str_columns)],
             dummies_dropping_na,
             dummies_dropping_first
         ],
         axis=1
     )
+    return dummies
+
+
+def factorise(df, na_sentinel):
+    df = df.copy()  # Don't modify in place.
+    for column_name in df.columns:
+        factorised, uniques = pd.factorize(
+            df[column_name], na_sentinel=na_sentinel)
+        df[column_name] = factorised
     return df
 
 
-def scale_dummy_columns(df, dummy_columns):
+def scale_dummy_columns(df):
     """
     Scale dummy columns to be centred around 0, with a range of (1, -1).
 
@@ -129,7 +152,7 @@ def scale_dummy_columns(df, dummy_columns):
     This method maintains the on/off nature of dummy columns rather than
     shifting the mean or scaling by the standard deviation.
     """
-    df[dummy_columns] = df[dummy_columns].apply(
+    df = df.apply(
         lambda x: (x - 0.5) * 2
     )
     return df
