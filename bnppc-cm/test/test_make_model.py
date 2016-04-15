@@ -15,7 +15,12 @@ from model.make_model import (
     make_xgb_submission,
 
     train_and_validate_etc,
-    make_etc_submission
+    make_etc_submission,
+
+    train_and_validate_rfc,
+    make_rfc_submission,
+
+    train_and_validate_model_average
 )
 
 
@@ -28,8 +33,12 @@ class TestMakeModel(unittest.TestCase):
         # make_sgdc_submission()
         # train_and_validate_xgb()
         # make_xgb_submission()
-        train_and_validate_etc()
-        make_etc_submission()
+        # train_and_validate_etc()
+        # make_etc_submission()
+        # train_and_validate_rfc()
+        # make_rfc_submission()
+
+        train_and_validate_model_average()
 
     # def test_make_lr_model():
     #     train_and_validate_lr_model()

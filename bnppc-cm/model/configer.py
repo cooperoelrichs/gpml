@@ -35,6 +35,7 @@ class Configer(object):
         self.not_x_labels = config['not_x_labels']
         self.y_label = config['y_label']
         self.columns_to_remove = config['columns_to_remove']
+        self.columns_to_not_one_hot = config['columns_to_not_one_hot']
 
         self.parameter_grids = config['parameter_grids']
         self.fitting_parameters = config['fitting_parameters']

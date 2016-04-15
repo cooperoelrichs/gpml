@@ -5,7 +5,10 @@ from .model_setup import (
     SVCModelSetup,
     SGDCModelSetup,
     XGBModelSetup,
-    ETCModelSetup
+    ETCModelSetup,
+    RFCModelSetup,
+
+    AvgEnsModelSetup
 )
 
 
@@ -78,19 +81,38 @@ def train_and_validate_etc():
     print('\nDumping model.')
     model_setup.dump_model(
         model, results, config.model_dump_file_names[model_setup.name])
+    print('Finished.')
+
+
+def train_and_validate_rfc():
+    config = configer.from_json('model/config.json')
+    model_setup = RFCModelSetup(config)
+    print('\n%s Model.' % model_setup.name)
+    model, results = train_and_validate(model_setup, config)
+    print('\nDumping model.')
+    model_setup.dump_model(
+        model, results, config.model_dump_file_names[model_setup.name])
+    print('Finished.')
+
+
+def train_and_validate_model_average():
+    """Just average all the models."""
+    # Maybe add some weights?
+    config = configer.from_json('model/config.json')
+    model_setup = AvgEnsModelSetup(config)
+
+    print('\nTrain individual models.')
+    model, results = train_and_validate(model_setup, config)
+    print('\nDumping model.')
+    model_setup.dump_model(
+        model, results, config.model_dump_file_names[model_setup.name])
+    print('Finished.')
 
 
 def train_and_validate(model_setup, config):
     print('\nTrain and validate a model aginst local data.')
     model = model_setup.model
     config.open_local_data_sets()
-
-    print('\nModel building and cross validation.')
-    # --1. Submission.--
-    # 2. Optimise remotly.
-    # 3. New type of model.
-    # 4. Ensemble.
-    # 5. Feature engineer?
 
     # TODO
     # 1. Auto select the num rounds - done.
@@ -99,6 +121,7 @@ def train_and_validate(model_setup, config):
     # 3. Seperate model using just OHE v22?
     # 4. Ensemble of LR or SGDC, XGBC, ETC, and RF.
 
+    print('\nModel building and cross validation.')
     # model = model_maker.do_grid_search(
     #     model, model_setup.parameter_grid, X_train_local, y_train_local)
 
@@ -106,8 +129,6 @@ def train_and_validate(model_setup, config):
 
     print('\nLocal validation.')
     results = evaluate_model_against_local_data(model, model_setup, config)
-
-    print('Finished.')
     return model, results
 
 
@@ -126,6 +147,18 @@ def make_etc_submission():
     config = configer.from_json('model/config.json')
     model_setup = ETCModelSetup(config)
     make_a_submission(model_setup, config)
+
+
+def make_rfc_submission():
+    print('\nRandom Forest Classifier submission.')
+    config = configer.from_json('model/config.json')
+    model_setup = RFCModelSetup(config)
+    make_a_submission(model_setup, config)
+
+
+def make_lr_ensemble_submission():
+    """Use LR to weight the submissions."""
+    pass
 
 
 def make_a_submission(model_setup, config):

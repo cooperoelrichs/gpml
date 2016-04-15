@@ -25,7 +25,7 @@
     "not_x_labels": ["ID", "target"],
     "y_label": "target",
     "columns_to_remove__": [
-        "v22", "v8","v23","v25","v36","v37","v46",
+        "v8","v23","v25","v36","v37","v46",
         "v51","v53","v54","v63","v73","v81",
         "v82","v89","v92","v95","v105","v107",
         "v108","v109","v116","v117","v118",
@@ -33,19 +33,23 @@
     ],
 
     "columns_to_remove": [
-        "v3","v10","v12","v14","v21","v22","v24","v30",
-        "v31","v34","v38","v40","v47","v50","v52","v56",
-        "v62","v66","v71","v72","v74","v75","v79","v91",
-        "v107","v110","v112","v113","v114","v125","v129"
+        "v8", "v23", "v25", "v31", "v36",
+        "v37", "v46", "v51", "v53", "v54", "v63", "v73",
+        "v75", "v79", "v81", "v82", "v89", "v92", "v95",
+        "v105", "v107", "v108", "v109", "v110", "v116",
+        "v117", "v118", "v119", "v123", "v124", "v128"
     ],
+
+    "columns_to_not_one_hot": ["v22"],
 
     "model_dump_file_names": {
         "LogisticRegression": "model_dump_lr.json",
         "SVC": "model_dump_svc.json",
         "SGDClassifier": "model_dump_sgdc.json",
         "XGBClassifier": "model_dump_xgb.model",
-        "XGBCEarlyStoppingCV": "model_dump_xgb.model",
-        "ExtraTreesClassifier": "model_dump_xgb.json"
+        "XGBCEarlyStoppingCV": "model_dump_xgb_escv.model",
+        "ExtraTreesClassifier": "model_dump_etc.json",
+        "RandomForestClassifier": "model_dump_rfc.json"
     },
 
     "fitting_parameters": {
@@ -56,7 +60,8 @@
             "verbose": true
         },
 
-        "ExtraTreesClassifier": {}
+        "ExtraTreesClassifier": {},
+        "RandomForestClassifier": {}
     },
 
     "parameter_grids": {
@@ -97,6 +102,7 @@
             "reg_lambda": [1]
         }],
 
-        "ExtraTreesClassifier": [{}]
+        "ExtraTreesClassifier": [{}],
+        "RandomForestClassifier": [{}]
     }
 }

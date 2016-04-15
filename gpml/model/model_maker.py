@@ -9,7 +9,7 @@ from sklearn.grid_search import GridSearchCV
 
 def print_coefs(feature_names, model):
     for feature, coef in zip(feature_names, model.coef_[0]):
-        print('%s - %.3f' % (feature, coef))
+        print('%s - %f' % (feature, coef))
 
 
 class ValidationResult(object):
@@ -40,11 +40,11 @@ class ValidationResults(object):
     def print_result(r):
         print(', '.join([
             'Accuracy: %.3f' % r.acc,
-            'LL: %.3f' % r.ll,
+            'LL: %.5f' % r.ll,
             'ROC AUC: %.3f' % r.roc_auc,
-            'Avg P: %0.3f' % r.avg_p,
-            'Acc 1s: %0.3f' % r.acc_1s,
-            'Acc 0s: %0.3f' % r.acc_0s,
+            'Avg P: %.3f' % r.avg_p,
+            'Acc 1s: %.3f' % r.acc_1s,
+            'Acc 0s: %.3f' % r.acc_0s,
         ]))
 
     def get_accuracies(self):
@@ -81,9 +81,9 @@ class ValidationResults(object):
         accuracies = self.get_accuracies()
         log_losses = self.get_log_losses()
 
-        print("Mean accuracy: %0.3f (+/- %0.3f)"
+        print("Mean accuracy: %.3f (+/- %.3f)"
               % (accuracies.mean(), accuracies.std() * 2))
-        print("Mean LL: %0.3f (+/- %0.3f)"
+        print("Mean LL: %.5f (+/- %.3f)"
               % (log_losses.mean(), log_losses.std() * 2))
 
     def validate_model_and_add_result(
@@ -98,7 +98,7 @@ class ValidationResults(object):
         acc = model.score(X_test, y_test)
         acc_1s = model.score(X_test[y_test > 0.5], y_test[y_test > 0.5])
         acc_0s = model.score(X_test[y_test < 0.5], y_test[y_test < 0.5])
-        ll = log_loss(y_test, predictions[:, 1], eps=10 ^ -15)
+        ll = log_loss(y_test, predictions[:, 1])
         roc_auc = roc_auc_score(y_test, predictions[:, 1])
         avg_p = predictions[:, 1].mean()
         self.append(acc, ll, roc_auc, avg_p, acc_1s, acc_0s)
