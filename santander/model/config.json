@@ -1,0 +1,151 @@
+{
+    "data_dir": "bnp-paribas-cardif-claims-management/",
+    "project_dir": "/Users/coelrichs/Projects/Kaggle/",
+    "model_dump_dir": "model_dumps/",
+    "submission_dir": "submissions/",
+    "submission_file_names": {
+        "LogisticRegression": "submission_lr.csv",
+        "SVC": "submission_svc.csv",
+        "SGDClassifier": "submission_sgdc.csv",
+        "XGBClassifier": "submission_xgbc.csv",
+        "XGBCEarlyStoppingCV": "submission_xgdc_escv.csv",
+        "ExtraTreesClassifier": "submission_etc.csv",
+        "RandomForestClassifier": "submission_rfc.csv",
+        "AveragingEnsemble": "submission_avg_ens.csv",
+        "LogisticRegressionEnsemble": "submission_lr_ens.csv",
+        "ExtraTreesEnsemble": "submission_et_ens.csv",
+        "XGBoostEnsemble": "submission_xgbc_ens.csv"
+    },
+
+
+    "local_test_size": 0.33,
+
+    "file_names": {
+        "test": "test.csv",
+        "train": "train.csv",
+        "sample_submission": "sample_submission.csv"
+    },
+
+    "data_set_names": {
+        "training_data_set": "training_data_set.h5",
+        "testing_data_set": "testing_data_set.h5"
+    },
+
+    "local_data_set_names": {
+        "local_training_data_set": "local_training_data_set.h5",
+        "local_testing_data_set": "local_testing_data_set.h5"
+    },
+
+    "not_x_labels": ["ID", "target"],
+    "y_label": "target",
+    "columns_to_remove__": [
+        "v8","v23","v25","v36","v37","v46",
+        "v51","v53","v54","v63","v73","v81",
+        "v82","v89","v92","v95","v105","v107",
+        "v108","v109","v116","v117","v118",
+        "v119","v123","v124","v128"
+    ],
+
+    "columns_to_remove": [
+        "v8", "v23", "v25", "v31", "v36",
+        "v37", "v46", "v51", "v53", "v54", "v63", "v73",
+        "v75", "v79", "v81", "v82", "v89", "v92", "v95",
+        "v105", "v107", "v108", "v109", "v110", "v116",
+        "v117", "v118", "v119", "v123", "v124", "v128"
+    ],
+
+    "columns_to_not_one_hot": ["v22"],
+
+    "model_dump_file_names": {
+        "LogisticRegression": "model_dump_lr.json",
+        "SVC": "model_dump_svc.json",
+        "SGDClassifier": "model_dump_sgdc.json",
+        "XGBClassifier": "model_dump_xgb.model",
+        "XGBCEarlyStoppingCV": "model_dump_xgb_escv.model",
+        "ExtraTreesClassifier": "model_dump_etc.json",
+        "RandomForestClassifier": "model_dump_rfc.json",
+        "AveragingEnsemble": "model_dump_averaging_ensemble.json",
+        "LogisticRegressionEnsemble": "model_dump_lr_ensemble.json",
+        "ExtraTreesEnsemble": "model_dump_etc_ensemble.json",
+        "XGBoostEnsemble": "model_dump_xgbc_ensemble.json"
+    },
+
+    "model_averaging_weights": {
+        "LogisticRegression": 1,
+        "SVC": 1,
+        "SGDClassifier": 1,
+        "XGBCEarlyStoppingCV": 1,
+        "ExtraTreesClassifier": 1,
+        "RandomForestClassifier": 1
+    },
+
+    "fitting_parameters": {
+        "XGBCEarlyStoppingCV": {
+            "eval_metric": "logloss",
+            "early_stopping_rounds": 10,
+            "nfold": 3,
+            "verbose": false
+        },
+
+        "LogisticRegression": {},
+        "SVC": {},
+        "SGDClassifier": {},
+        "ExtraTreesClassifier": {},
+        "RandomForestClassifier": {},
+        "AveragingEnsemble": {},
+        "LogisticRegressionEnsemble": {},
+        "ExtraTreesEnsemble": {},
+        "XGBoostEnsemble": {
+            "eval_metric": "logloss",
+            "early_stopping_rounds": 10,
+            "nfold": 3,
+            "verbose": false
+        }
+    },
+
+    "parameter_grids": {
+        "LogisticRegression": [
+            {"C": [0.01, 0.1, 1], "penalty": ["l2", "l1"]}
+        ],
+
+        "SVC": [{
+            "C": [0.0001, 0.001, 0.01, 0.1, 1, 10],
+            "degree": [3],
+            "gamma": [0.000001, 0.00001, 0.0001, 0.001, 0.01, 1],
+            "kernel": ["linear", "poly", "rbf", "sigmoid"]
+        }],
+
+        "SGDClassifier": [{
+            "n_iter": [1000],
+            "average": [true, false],
+            "loss": ["log", "modified_huber"],
+            "alpha": [0.0001, 0.001, 0.01],
+            "l1_ratio": [0, 0.1, 1]
+        }],
+
+        "XGBCEarlyStoppingCV": [{
+            "n_estimators": [1500],
+            "learning_rate": [0.05, 0.01, 0.002],
+            "max_depth": [9, 11, 13, 20],
+            "min_child_weight": [10, 100, 250],
+            "subsample": [0.7, 0.96],
+            "colsample_bytree": [0.3, 0.45, 0.6],
+
+            "silent": [true],
+            "objective": ["binary:logistic"],
+            "nthread": [-1],
+            "gamma": [1, 2, 10],
+            "max_delta_step": [1],
+            "colsample_bylevel": [1],
+            "reg_alpha": [1],
+            "reg_lambda": [1]
+        }],
+
+        "ExtraTreesClassifier": [{}],
+        "RandomForestClassifier": [{}],
+        "AveragingEnsemble": [{}],
+        "LogisticRegressionEnsemble": [{}],
+        "ExtraTreesEnsemble": [{}],
+        "XGBoostEnsemble": [{}]
+    }
+}
