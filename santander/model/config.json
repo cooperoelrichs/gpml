@@ -1,6 +1,5 @@
 {
-    "data_dir": "bnp-paribas-cardif-claims-management/",
-    "project_dir": "/Users/coelrichs/Projects/Kaggle/",
+    "data_dir": "santander-customer-satisfaction/",
     "model_dump_dir": "model_dumps/",
     "submission_dir": "submissions/",
     "submission_file_names": {
@@ -18,7 +17,7 @@
     },
 
 
-    "local_test_size": 0.33,
+    "evaluation_test_size": 0.30,
 
     "file_names": {
         "test": "test.csv",
@@ -31,30 +30,18 @@
         "testing_data_set": "testing_data_set.h5"
     },
 
-    "local_data_set_names": {
-        "local_training_data_set": "local_training_data_set.h5",
-        "local_testing_data_set": "local_testing_data_set.h5"
+    "evaluation_data_set_names": {
+        "evaluation_training_data_set": "evaluation_training_data_set.h5",
+        "evaluation_testing_data_set": "evaluation_testing_data_set.h5"
     },
 
-    "not_x_labels": ["ID", "target"],
-    "y_label": "target",
-    "columns_to_remove__": [
-        "v8","v23","v25","v36","v37","v46",
-        "v51","v53","v54","v63","v73","v81",
-        "v82","v89","v92","v95","v105","v107",
-        "v108","v109","v116","v117","v118",
-        "v119","v123","v124","v128"
-    ],
+    "not_x_labels": [],
+    "y_label": "",
+    "columns_to_remove__": [],
 
-    "columns_to_remove": [
-        "v8", "v23", "v25", "v31", "v36",
-        "v37", "v46", "v51", "v53", "v54", "v63", "v73",
-        "v75", "v79", "v81", "v82", "v89", "v92", "v95",
-        "v105", "v107", "v108", "v109", "v110", "v116",
-        "v117", "v118", "v119", "v123", "v124", "v128"
-    ],
+    "columns_to_remove": [],
 
-    "columns_to_not_one_hot": ["v22"],
+    "columns_to_not_one_hot": [],
 
     "model_dump_file_names": {
         "LogisticRegression": "model_dump_lr.json",
@@ -107,13 +94,6 @@
         "LogisticRegression": [
             {"C": [0.01, 0.1, 1], "penalty": ["l2", "l1"]}
         ],
-
-        "SVC": [{
-            "C": [0.0001, 0.001, 0.01, 0.1, 1, 10],
-            "degree": [3],
-            "gamma": [0.000001, 0.00001, 0.0001, 0.001, 0.01, 1],
-            "kernel": ["linear", "poly", "rbf", "sigmoid"]
-        }],
 
         "SGDClassifier": [{
             "n_iter": [1000],
