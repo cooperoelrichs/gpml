@@ -5,7 +5,7 @@ import pandas as pd
 
 def run(project_dir):
     extract_transform(project_dir)
-    # split_evaluation_train_and_test_data(project_dir)
+    split_evaluation_train_and_test_data(project_dir)
 
 
 def extract_transform(project_dir):
@@ -20,6 +20,23 @@ def extract_transform(project_dir):
     # Make one big data set for encoding
     data_set = pd.concat((train, test), axis=0, ignore_index=True)
     data_set = data_set.drop(config.columns_to_remove, axis=1)
+
+    # Features to add:
+    # Normalise
+    # One Hot
+    # Factorise
+    # Clip
+    # Feature interactions - 2 and 3 level
+    # KNN features
+    # PCA
+    # Sum zeros/nans
+    # Rounding to remove noise?
+    # Bin continous features
+    # Baysean coding
+    # Baysean coding of interactions
+    # MRMR feature selection
+    # TNSE - 2D
+    # Replace with target mean - ignoring current row.
 
     raise RuntimeError('We should actually do something...')
 
