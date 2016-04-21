@@ -14,6 +14,9 @@ def extract_transform(project_dir):
     test = config.data_frames['test']
     num_train = train.shape[0]
 
+    print('Train shape: (%i, %i)' % train.shape)
+    print('Test shape: (%i, %i)' % test.shape)
+
     # Make one big data set for encoding
     data_set = pd.concat((train, test), axis=0, ignore_index=True)
     data_set = data_set.drop(config.columns_to_remove, axis=1)
