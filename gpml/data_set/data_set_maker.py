@@ -1,5 +1,41 @@
 import pandas as pd
 from sklearn.cross_validation import train_test_split
+from .knn_linear_features import NearestNeighbourLinearFeatures
+
+
+def add_knn_linear_features(
+        X_train, X_test, y_train, num_new_features=15, max_group_size=5):
+    for X in [X_train, X_test]:
+        for i in [0, 1, 2, 3]:
+            new_column_name = 'v22-%i' % (i + 1)
+
+            X[new_column_name] = X['v22'].fillna('@@@@').apply(
+                lambda x: '@' * (4 - len(str(x))) + str(x)
+            ).apply(
+                lambda x: ord(x[i])
+            )
+
+    # drop_list=[
+    #     'v91','v1', 'v8', 'v10', 'v15', 'v17',
+    #     'v25', 'v29', 'v34', 'v41', 'v46', 'v54',
+    #     'v64', 'v67', 'v97', 'v105', 'v111', 'v122'
+    # ]
+
+    # refcols = list(X.columns)
+    # for elt in refcols:
+    #     if X[elt].dtype == 'O':
+    #         X[elt], temp = pd.factorize(X[elt])
+
+    a = NearestNeighbourLinearFeatures(
+        n_neighbours=num_new_features,
+        max_elts=max_group_size,
+        verbose=False,
+        random_state=12
+    )
+    a.fit(X_train, y_train)
+    X_train = a.transform(X_train)
+    X_test = a.transform(X_test)
+    return X_train, X_test
 
 
 def check_and_save_to_hdf(df, file_name, meta_columns):
