@@ -4,17 +4,18 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.svm import SVC
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
-from gpml.model import model_maker
 from gpml.xgboost_mod.improved_early_stopping import XGBCEarlyStoppingCV
 import xgboost as xgb
 import matplotlib.pyplot as plt
-from gpml.model.ensemble import AveragingEnsemble
+from gpml.model.ensemble import (
+    AveragingEnsemble, LREnsemble, ETCEnsemble, XGBCEnsemble)
 
 
 class ModelSetup(object):
     """Handle model specific operations."""
 
-    def __init__(self, config):
+    def __init__(self, name, config):
+        self.name = name
         self.model = self.basic_model()
         self.parameter_grid = config.parameter_grids[self.name]
 
@@ -57,8 +58,8 @@ class ModelSetup(object):
         empty_model.set_params(**model_load['parameters'])
 
         results = model_load['results']
-        print('Loaded model results:')
-        model_maker.print_dict_as_indented_list(results)
+        # print('Loaded model results:')
+        # model_maker.print_dict_as_indented_list(results)
         return empty_model, coefs, results
 
     def check_coef_load(self, coefs, coef_dtype, coef_shape):
@@ -79,24 +80,35 @@ class ModelSetup(object):
             'Model specific method, inheritors must overload this'
         )
 
-    def dump_model_to_json_obj(self, model):
-        ModelSetup.not_implemented_error()
-
     @staticmethod
     def basic_model():
         ModelSetup.not_implemented_error()
 
-    def load_model(self):
-        ModelSetup.not_implemented_error()
+    def generic_dump_model(self, model, results, file_name):
+        model_json = {
+            'model_type_name': type(model).__name__,
+            'parameters': model.get_params(),
+            'results': results,
+        }
+        self.json_dump(model_json, file_name)
+        results_file_name = file_name.replace('.json', '_results.json')
+        self.json_dump(results, results_file_name)
+
+    def generic_load_model(self, file_name):
+        model_dump = self.json_load(file_name)
+        results = model_dump['results']
+        # print('Loaded model results:')
+        # model_maker.print_dict_as_indented_list(results)
+        self.model.set_params(**model_dump['parameters'])
+        return self.model, results
 
 
 class LRModelSetup(ModelSetup):
     """Logistic Regression Model Setup."""
 
-    def dump_model_to_json_obj(self, model):
-        coefs = model.coef_
-        model_dump = self.make_json_dump(model, coefs)
-        return model_dump
+    def __init__(self, config):
+        name = 'LogisticRegression'
+        super().__init__(name, config)
 
     @staticmethod
     def basic_model():
@@ -108,18 +120,23 @@ class LRModelSetup(ModelSetup):
             random_state=1,
             # solver='lbfgs',
             # tol=0.000001,
-            # n_jobs=-1
+            n_jobs=-1
         )
         return lr
+
+    def dump_model(self, model, results, file_name):
+        self.generic_dump_model(model, results, file_name)
+
+    def load_model(self, file_name):
+        return self.generic_load_model(file_name)
 
 
 class SVCModelSetup(ModelSetup):
     """Support Vector Classifier Model Setup."""
 
-    def dump_model_to_json_obj(self, model):
-        support_vectors = model.support_vectors_
-        model_dump = self.make_json_dump(model, support_vectors)
-        return model_dump
+    def __init__(self, config):
+        name = 'SVC'
+        super().__init__(name, config)
 
     @staticmethod
     def basic_model():
@@ -128,9 +145,10 @@ class SVCModelSetup(ModelSetup):
             kernel='rbf',
             probability=True,
             # class_weight='balanced',
-            max_iter=10,
+            max_iter=1000,
             random_state=1,
-            tol=0.000001
+            # tol=0.000001,
+            n_jobs=-1
         )
         return svc
 
@@ -138,10 +156,9 @@ class SVCModelSetup(ModelSetup):
 class SGDCModelSetup(ModelSetup):
     """SGD Classifier Model Setup."""
 
-    def dump_model_to_json_obj(self, model):
-        coefs = model.coef_
-        model_dump = self.make_json_dump(model, coefs)
-        return model_dump
+    def __init__(self, config):
+        name = 'SGDClassifier'
+        super().__init__(name, config)
 
     @staticmethod
     def basic_model():
@@ -154,35 +171,37 @@ class SGDCModelSetup(ModelSetup):
             random_state=1,
             average=False,
             # verbose=1,
-            learning_rate='optimal'
+            learning_rate='optimal',
             # class_weight='balanced',  # This ruins the acc and ll scores.
-            # n_jobs=-1
+            n_jobs=-1
         )
         return sgdc
 
-    def load_model_from_json(self, file_name):
-        empty_model, coefs, results = self.process_model_load(file_name)
-        empty_model.coef_ = coefs
-        return empty_model, results
+    def dump_model(self, model, results, file_name):
+        self.generic_dump_model(model, results, file_name)
+
+    def load_model(self, file_name):
+        return self.generic_load_model(file_name)
 
 
 class XGBModelSetup(ModelSetup):
     """XGBoost Model Setup."""
 
-    def __init__(self, parameter_grid):
+    def __init__(self, config):
+        name = 'XGBCEarlyStoppingCV'
         # XGBoost multi-thread support
         # import os
         # from multiprocessing import set_start_method
 
         # os.environ["OMP_NUM_THREADS"] = "7"
-        super().__init__(parameter_grid)
+        super().__init__(name, config)
 
     @staticmethod
     def basic_model():
         xgb = XGBCEarlyStoppingCV(
             max_depth=9,
             learning_rate=0.01,  # Boosting learning rate (xgb's "eta")
-            n_estimators=10000,  # num_boost_round
+            n_estimators=2000,  # num_boost_round
             # silent=False,
             objective='binary:logistic',
             nthread=-1,
@@ -237,11 +256,10 @@ class XGBModelSetup(ModelSetup):
         model = self.basic_model()
         model._Booster = self.empty_booster()
         model._Booster.load_model(file_name)
-        print('Parameters of the loaded model:')
-        model_maker.print_dict_as_indented_list(model.get_params())
+        # print('Parameters of the loaded model:')
+        # model_maker.print_dict_as_indented_list(model.get_params())
         results_file_name = file_name.replace('.model', '_results.json')
         results = self.json_load(results_file_name)
-        model_maker.print_result_from_dict(results)
         return model, results
 
 
@@ -249,8 +267,8 @@ class ETCModelSetup(ModelSetup):
     """Extra Trees Classifier Model Setup."""
 
     def __init__(self, config):
-        self.name = 'ExtraTreesClassifier'
-        super().__init__(config)
+        name = 'ExtraTreesClassifier'
+        super().__init__(name, config)
 
     @staticmethod
     def basic_model():
@@ -300,46 +318,31 @@ class ETCModelSetup(ModelSetup):
         raise NotImplementedError()
 
     def dump_model(self, model, results, file_name):
-        model_json = {
-            'model_type_name': type(model).__name__,
-            'parameters': model.get_params(),
-            'results': results,
-        }
-
-        self.json_dump(model_json, file_name)
-
-        results_file_name = file_name.replace('.json', '_results.json')
-        self.json_dump(results, results_file_name)
+        self.generic_dump_model(model, results, file_name)
 
     def load_model(self, file_name):
-        model_dump = self.json_load(file_name)
-        results = model_dump['results']
-        print('Loaded model results:')
-        model_maker.print_dict_as_indented_list(results)
-        model = self.basic_model()
-        model.set_params(**model_dump['parameters'])
-        return model, results
+        return self.generic_load_model(file_name)
 
 
 class RFCModelSetup(ModelSetup):
     """Random Forest Classifier Model Setup."""
 
     def __init__(self, config):
-        self.name = 'ExtraTreesClassifier'
-        super().__init__(config)
+        name = 'RandomForestClassifier'
+        super().__init__(name, config)
 
     @staticmethod
     def basic_model():
         rfc = RandomForestClassifier(
-            n_estimators=1000,
+            n_estimators=3000,
             criterion='entropy',
-            max_depth=35,  # None,
+            max_depth=80,  # None,
             min_samples_split=4,  # 2,
             min_samples_leaf=2,  # 1,
             min_weight_fraction_leaf=0.0,
             max_features=50,  # 'auto',
             max_leaf_nodes=None,
-            bootstrap=False,  # True,
+            bootstrap=True,  # True,
 
             # n_estimators=1000,
             # max_features=50,
@@ -360,62 +363,182 @@ class RFCModelSetup(ModelSetup):
         raise NotImplementedError()
 
     def dump_model(self, model, results, file_name):
-        model_json = {
-            'model_type_name': type(model).__name__,
-            'parameters': model.get_params(),
-            'results': results,
-        }
-
-        self.json_dump(model_json, file_name)
-
-        results_file_name = file_name.replace('.json', '_results.json')
-        self.json_dump(results, results_file_name)
+        self.generic_dump_model(model, results, file_name)
 
     def load_model(self, file_name):
+        return self.generic_load_model(file_name)
+
+
+class EnsembleSetup(ModelSetup):
+    """Generic Ensemble."""
+
+    def __init__(self, name, model_setups, config):
+        self.model_setups = model_setups
+        self.weights = config.model_averaging_weights
+        self.fitting_parameters = config.fitting_parameters
+        self.model_dump_file_names = config.model_dump_file_names
+        self.models = dict([(ms.name, ms.model) for ms in self.model_setups])
+        super().__init__(name, config)
+
+    def generic_model_ensemble_dump(self, model, results, file_name):
+        for model_setup in self.model_setups:
+            model_json = {
+                'model_name': self.name,
+                # 'parameters': model.get_params(),
+                'results': results,
+            }
+            self.json_dump(model_json, file_name)
+
+            model_setup.dump_model(
+                model.models[model_setup.name],
+                {},
+                self.model_dump_file_names[model_setup.name]
+            )
+
+    def generic_model_ensemble_load(self, file_name):
         model_dump = self.json_load(file_name)
         results = model_dump['results']
-        print('Loaded model results:')
-        model_maker.print_dict_as_indented_list(results)
-        model = self.basic_model()
-        model.set_params(**model_dump['parameters'])
-        return model, results
+        # print('Loaded model results:')
+        # model_maker.print_dict_as_indented_list(results)
+
+        for model_setup in self.model_setups:
+            model_setup.load_model(
+                self.model_dump_file_names[model_setup.name])
+
+        # model.set_params(**model_dump['parameters'])
+        return self.model, results
 
 
-class AvgEnsModelSetup(ModelSetup):
-    """Averaging Ensemble."""
-
+class AvgEnsSetup(EnsembleSetup):
     def __init__(self, config):
-        self.name = 'AveragingEnsemble'
-        self.model_setups = [
+        name = 'AveragingEnsemble'
+
+        # vc = VotingClassifier(
+        #     estimators = []
+        #     voting = 'soft'
+        #     weights = []
+        # )
+
+        model_setups = [
             LRModelSetup(config),
-            SVCModelSetup(config),
-            SGDCModelSetup(config),
+            # SGDCModelSetup(config),
             XGBModelSetup(config),
             ETCModelSetup(config),
             RFCModelSetup(config)
         ]
-        self.weights = config.weights
-        super().__init__(config)
+        super().__init__(name, model_setups, config)
 
-    @staticmethod
     def basic_model(self):
-        AveragingEnsemble(
-            [ms.model for ms in self.model_setups],
-            weights
-        )
-
-    @staticmethod
-    def empty_booster():
-        raise NotImplementedError()
+        ae = AveragingEnsemble(
+            self.name, self.models, self.fitting_parameters, self.weights)
+        return ae
 
     def dump_model(self, model, results, file_name):
-        raise NotImplementedError()
-        for model_setup, (model, results) in zip(model_setups, trained):
-            model_setup.dump_model(
-                model,
-                results,
-                config.model_dump_file_names[model_setup.name]
-            )
+        self.generic_model_ensemble_dump(model, results, file_name)
 
     def load_model(self, file_name):
-        raise NotImplementedError()
+        return self.generic_model_ensemble_load(file_name)
+
+
+class LREnsSetup(EnsembleSetup):
+    def __init__(self, config):
+        name = 'LogisticRegressionEnsemble'
+        model_setups = [
+            LRModelSetup(config),
+            # SGDCModelSetup(config),
+            XGBModelSetup(config),
+            ETCModelSetup(config),
+            RFCModelSetup(config)
+        ]
+        super().__init__(name, model_setups, config)
+
+    def basic_model(self):
+        lre = LREnsemble(
+            self.name, self.models, self.fitting_parameters,
+            penalty='l1',
+            C=0.1,
+            random_state=1,
+            n_jobs=-1
+        )
+        return lre
+
+    def dump_model(self, model, results, file_name):
+        self.generic_model_ensemble_dump(model, results, file_name)
+
+    def load_model(self, file_name):
+        return self.generic_model_ensemble_load(file_name)
+
+
+class ETCEnsSetup(EnsembleSetup):
+    def __init__(self, config):
+        name = 'ExtraTreesEnsemble'
+        model_setups = [
+            LRModelSetup(config),
+            # SGDCModelSetup(config),
+            XGBModelSetup(config),
+            ETCModelSetup(config),
+            RFCModelSetup(config)
+        ]
+        super().__init__(name, model_setups, config)
+
+    def basic_model(self):
+        ensemble = ETCEnsemble(
+            self.name, self.models, self.fitting_parameters,
+            n_estimators=1000,
+            max_features=4,
+            criterion='entropy',
+            min_samples_split=4,
+            max_depth=35,
+            min_samples_leaf=2,
+
+            n_jobs=-1,
+            verbose=0,
+            random_state=1
+        )
+        return ensemble
+
+    def dump_model(self, model, results, file_name):
+        self.generic_model_ensemble_dump(model, results, file_name)
+
+    def load_model(self, file_name):
+        return self.generic_model_ensemble_load(file_name)
+
+
+class XGBCEnsSetup(EnsembleSetup):
+    def __init__(self, config):
+        name = 'XGBoostEnsemble'
+        model_setups = [
+            LRModelSetup(config),
+            # SGDCModelSetup(config),
+            XGBModelSetup(config),
+            ETCModelSetup(config),
+            RFCModelSetup(config)
+        ]
+        super().__init__(name, model_setups, config)
+
+    def basic_model(self):
+        ensemble = XGBCEnsemble(
+            self.name, self.models, self.fitting_parameters,
+            max_depth=9,
+            learning_rate=0.01,
+            n_estimators=1500,
+            # silent=False,
+            objective='binary:logistic',
+            nthread=-1,
+            gamma=2,
+            min_child_weight=10,
+            max_delta_step=1,
+            subsample=0.96,
+            colsample_bytree=0.45,
+            colsample_bylevel=1,
+            reg_alpha=1,
+            reg_lambda=1,
+            seed=1,
+        )
+        return ensemble
+
+    def dump_model(self, model, results, file_name):
+        self.generic_model_ensemble_dump(model, results, file_name)
+
+    def load_model(self, file_name):
+        return self.generic_model_ensemble_load(file_name)

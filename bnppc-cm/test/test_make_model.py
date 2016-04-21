@@ -20,7 +20,14 @@ from model.make_model import (
     train_and_validate_rfc,
     make_rfc_submission,
 
-    train_and_validate_model_average
+    train_and_validate_model_average,
+    make_model_average_submission,
+    train_and_validate_lr_ensemble,
+    make_lr_ensemble_submission,
+    train_and_validate_etc_ensemble,
+    make_etc_ensemble_submission,
+    train_and_validate_xgbc_ensemble,
+    make_xgbc_ensemble_submission
 )
 
 
@@ -38,7 +45,14 @@ class TestMakeModel(unittest.TestCase):
         # train_and_validate_rfc()
         # make_rfc_submission()
 
-        train_and_validate_model_average()
+        # train_and_validate_model_average()
+        # make_model_average_submission()
+        train_and_validate_lr_ensemble()
+        make_lr_ensemble_submission()
+        train_and_validate_etc_ensemble()
+        make_etc_ensemble_submission()
+        train_and_validate_xgbc_ensemble()
+        make_xgbc_ensemble_submission()
 
     # def test_make_lr_model():
     #     train_and_validate_lr_model()

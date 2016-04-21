@@ -8,7 +8,10 @@ from .model_setup import (
     ETCModelSetup,
     RFCModelSetup,
 
-    AvgEnsModelSetup
+    AvgEnsSetup,
+    LREnsSetup,
+    ETCEnsSetup,
+    XGBCEnsSetup
 )
 
 
@@ -74,34 +77,35 @@ def train_and_validate_xgb():
 
 
 def train_and_validate_etc():
-    config = configer.from_json('model/config.json')
-    model_setup = ETCModelSetup(config)
-    print('\n%s Model.' % model_setup.name)
-    model, results = train_and_validate(model_setup, config)
-    print('\nDumping model.')
-    model_setup.dump_model(
-        model, results, config.model_dump_file_names[model_setup.name])
-    print('Finished.')
+    train_and_validate_generic_model(ETCModelSetup)
 
 
 def train_and_validate_rfc():
-    config = configer.from_json('model/config.json')
-    model_setup = RFCModelSetup(config)
-    print('\n%s Model.' % model_setup.name)
-    model, results = train_and_validate(model_setup, config)
-    print('\nDumping model.')
-    model_setup.dump_model(
-        model, results, config.model_dump_file_names[model_setup.name])
-    print('Finished.')
+    train_and_validate_generic_model(RFCModelSetup)
 
 
 def train_and_validate_model_average():
     """Just average all the models."""
     # Maybe add some weights?
-    config = configer.from_json('model/config.json')
-    model_setup = AvgEnsModelSetup(config)
+    train_and_validate_generic_model(AvgEnsSetup)
 
-    print('\nTrain individual models.')
+
+def train_and_validate_lr_ensemble():
+    train_and_validate_generic_model(LREnsSetup)
+
+
+def train_and_validate_etc_ensemble():
+    train_and_validate_generic_model(ETCEnsSetup)
+
+
+def train_and_validate_xgbc_ensemble():
+    train_and_validate_generic_model(XGBCEnsSetup)
+
+
+def train_and_validate_generic_model(model_setup_class):
+    config = configer.from_json('model/config.json')
+    model_setup = model_setup_class(config)
+    print('\n%s Model.' % model_setup.name)
     model, results = train_and_validate(model_setup, config)
     print('\nDumping model.')
     model_setup.dump_model(
@@ -125,7 +129,7 @@ def train_and_validate(model_setup, config):
     # model = model_maker.do_grid_search(
     #     model, model_setup.parameter_grid, X_train_local, y_train_local)
 
-    evaluate_model_using_kfolds(model, model_setup, config)
+    # evaluate_model_using_kfolds(model, model_setup, config)
 
     print('\nLocal validation.')
     results = evaluate_model_against_local_data(model, model_setup, config)
@@ -143,32 +147,45 @@ def make_xgb_submission():
 
 
 def make_etc_submission():
-    print('\nExtra Trees Classifier submission.')
-    config = configer.from_json('model/config.json')
-    model_setup = ETCModelSetup(config)
-    make_a_submission(model_setup, config)
+    make_generic_submission(ETCModelSetup)
 
 
 def make_rfc_submission():
-    print('\nRandom Forest Classifier submission.')
-    config = configer.from_json('model/config.json')
-    model_setup = RFCModelSetup(config)
-    make_a_submission(model_setup, config)
+    make_generic_submission(RFCModelSetup)
+
+
+def make_model_average_submission():
+    make_generic_submission(AvgEnsSetup)
 
 
 def make_lr_ensemble_submission():
-    """Use LR to weight the submissions."""
-    pass
+    make_generic_submission(LREnsSetup)
+
+
+def make_etc_ensemble_submission():
+    make_generic_submission(ETCEnsSetup)
+
+
+def make_xgbc_ensemble_submission():
+    make_generic_submission(XGBCEnsSetup)
+
+
+def make_generic_submission(model_setup_class):
+    config = configer.from_json('model/config.json')
+    model_setup = model_setup_class(config)
+    print('\nMaking %s submission.' % model_setup.name)
+    make_a_submission(model_setup, config)
 
 
 def make_a_submission(model_setup, config):
     print('Loading model')
-    model, _ = model_setup.load_model(
+    model, results = model_setup.load_model(
         config.model_dump_file_names[model_setup.name])
+    model_maker.print_result_from_dict(results)
 
     print('\nValidating loaded model.')
-    config.open_local_data_sets()
-    evaluate_model_against_local_data(model, model_setup, config)
+    # config.open_local_data_sets()
+    # evaluate_model_against_local_data(model, model_setup, config)
 
     print('\nTraining on the entire data set, and making predictions.')
     config.open_data_sets()
@@ -184,7 +201,7 @@ def make_a_submission(model_setup, config):
         X_submission, id_column,
         model,
         config.fitting_parameters[model_setup.name],
-        config.submission_file_name
+        config.submission_file_names[model_setup.name]
     )
     print('Finished.')
 

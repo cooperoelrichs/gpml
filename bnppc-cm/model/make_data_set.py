@@ -41,6 +41,13 @@ def extract_transform_load():
     data_set = data_set_maker.fill_nans_in_num_columns_with(
         data_set, -999, meta_columns)
 
+    data_set = add_knn_linear_features(
+        data_set.iloc[:num_train],
+        data_set.iloc[num_train:],
+        meta_columns,
+        num_new_features=15, max_group_size=5
+    )
+
     train = data_set.iloc[:num_train]
     test = data_set.iloc[num_train:]
     training_file_name = config.data_set_names['training_data_set']
@@ -51,6 +58,25 @@ def extract_transform_load():
     print('Final Training data shape: %i, %i' % train.shape)
     print('Final Testing data shape:  %i, %i' % test.shape)
     print('Finished.')
+
+
+def add_knn_linear_features(
+        train, test, meta_columns, num_new_features, max_group_size):
+    train_dropped_columns = train[meta_columns]
+    test_dropped_columns = test[meta_columns]
+    y_train = train['target']
+    X_train = train.drop(meta_columns, axis=1)
+    X_test = test.drop(meta_columns, axis=1)
+
+    X_train, X_test = data_set_maker.add_knn_linear_features(
+        X_train, X_test, y_train,
+        num_new_features=num_new_features, max_group_size=max_group_size
+    )
+
+    train = pd.concat([X_train, train_dropped_columns], axis=1)
+    test = pd.concat([X_test, test_dropped_columns], axis=1)
+    data_set = pd.concat((train, test), axis=0, ignore_index=True)
+    return data_set
 
 
 def one_hot_encode_categoricals(

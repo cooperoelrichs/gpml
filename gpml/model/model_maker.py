@@ -3,7 +3,7 @@ import pandas as pd
 import numbers
 import json
 from sklearn.cross_validation import KFold
-from sklearn.metrics import log_loss, roc_auc_score
+from sklearn.metrics import log_loss, roc_auc_score, accuracy_score
 from sklearn.grid_search import GridSearchCV
 
 
@@ -93,14 +93,18 @@ class ValidationResults(object):
             X_train, y_train,
             **fitting_parameters
         )
-        predictions = model.predict_proba(X_test)
 
-        acc = model.score(X_test, y_test)
-        acc_1s = model.score(X_test[y_test > 0.5], y_test[y_test > 0.5])
-        acc_0s = model.score(X_test[y_test < 0.5], y_test[y_test < 0.5])
-        ll = log_loss(y_test, predictions[:, 1])
-        roc_auc = roc_auc_score(y_test, predictions[:, 1])
-        avg_p = predictions[:, 1].mean()
+        probs = model.predict_proba(X_test)
+        preds = model.predict(X_test)
+
+        acc = accuracy_score(y_test, preds)
+        acc_1s = accuracy_score(y_test[y_test > 0.5],
+                                preds[y_test.values > 0.5])
+        acc_0s = accuracy_score(y_test[y_test < 0.5],
+                                preds[y_test.values < 0.5])
+        ll = log_loss(y_test, probs[:, 1])
+        roc_auc = roc_auc_score(y_test, probs[:, 1])
+        avg_p = probs[:, 1].mean()
         self.append(acc, ll, roc_auc, avg_p, acc_1s, acc_0s)
 
         if verbose:

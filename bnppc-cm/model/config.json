@@ -2,7 +2,21 @@
     "data_dir": "bnp-paribas-cardif-claims-management/",
     "project_dir": "/Users/coelrichs/Projects/Kaggle/",
     "model_dump_dir": "model_dumps/",
-    "submission_file_name": "submission.csv",
+    "submission_dir": "submissions/",
+    "submission_file_names": {
+        "LogisticRegression": "submission_lr.csv",
+        "SVC": "submission_svc.csv",
+        "SGDClassifier": "submission_sgdc.csv",
+        "XGBClassifier": "submission_xgbc.csv",
+        "XGBCEarlyStoppingCV": "submission_xgdc_escv.csv",
+        "ExtraTreesClassifier": "submission_etc.csv",
+        "RandomForestClassifier": "submission_rfc.csv",
+        "AveragingEnsemble": "submission_avg_ens.csv",
+        "LogisticRegressionEnsemble": "submission_lr_ens.csv",
+        "ExtraTreesEnsemble": "submission_et_ens.csv",
+        "XGBoostEnsemble": "submission_xgbc_ens.csv"
+    },
+
 
     "local_test_size": 0.33,
 
@@ -49,19 +63,44 @@
         "XGBClassifier": "model_dump_xgb.model",
         "XGBCEarlyStoppingCV": "model_dump_xgb_escv.model",
         "ExtraTreesClassifier": "model_dump_etc.json",
-        "RandomForestClassifier": "model_dump_rfc.json"
+        "RandomForestClassifier": "model_dump_rfc.json",
+        "AveragingEnsemble": "model_dump_averaging_ensemble.json",
+        "LogisticRegressionEnsemble": "model_dump_lr_ensemble.json",
+        "ExtraTreesEnsemble": "model_dump_etc_ensemble.json",
+        "XGBoostEnsemble": "model_dump_xgbc_ensemble.json"
+    },
+
+    "model_averaging_weights": {
+        "LogisticRegression": 1,
+        "SVC": 1,
+        "SGDClassifier": 1,
+        "XGBCEarlyStoppingCV": 1,
+        "ExtraTreesClassifier": 1,
+        "RandomForestClassifier": 1
     },
 
     "fitting_parameters": {
-        "XGBClassifier": {
+        "XGBCEarlyStoppingCV": {
             "eval_metric": "logloss",
             "early_stopping_rounds": 10,
             "nfold": 3,
-            "verbose": true
+            "verbose": false
         },
 
+        "LogisticRegression": {},
+        "SVC": {},
+        "SGDClassifier": {},
         "ExtraTreesClassifier": {},
-        "RandomForestClassifier": {}
+        "RandomForestClassifier": {},
+        "AveragingEnsemble": {},
+        "LogisticRegressionEnsemble": {},
+        "ExtraTreesEnsemble": {},
+        "XGBoostEnsemble": {
+            "eval_metric": "logloss",
+            "early_stopping_rounds": 10,
+            "nfold": 3,
+            "verbose": false
+        }
     },
 
     "parameter_grids": {
@@ -84,7 +123,7 @@
             "l1_ratio": [0, 0.1, 1]
         }],
 
-        "XGBClassifier": [{
+        "XGBCEarlyStoppingCV": [{
             "n_estimators": [1500],
             "learning_rate": [0.05, 0.01, 0.002],
             "max_depth": [9, 11, 13, 20],
@@ -103,6 +142,10 @@
         }],
 
         "ExtraTreesClassifier": [{}],
-        "RandomForestClassifier": [{}]
+        "RandomForestClassifier": [{}],
+        "AveragingEnsemble": [{}],
+        "LogisticRegressionEnsemble": [{}],
+        "ExtraTreesEnsemble": [{}],
+        "XGBoostEnsemble": [{}]
     }
 }
