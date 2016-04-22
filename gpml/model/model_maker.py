@@ -2,9 +2,61 @@ import numpy as np
 import pandas as pd
 import numbers
 import json
-from sklearn.cross_validation import KFold
+from sklearn.cross_validation import StratifiedKFold
 from sklearn.metrics import log_loss, roc_auc_score, accuracy_score
 from sklearn.grid_search import GridSearchCV
+
+
+def get_x(df, not_x_labels):
+    feature_names = df.columns.difference(not_x_labels)
+    return df[feature_names]
+
+
+def get_y(df, y_label):
+    return df[y_label]
+
+
+def get_x_and_y(df, not_x_labels, y_label):
+    return get_x(df, not_x_labels), get_y(df, y_label)
+
+
+def get_xs_and_ys(eval_train, eval_test, not_x_labels, y_label):
+    X_train, y_train = get_x_and_y(
+        eval_train, not_x_labels, y_label)
+    X_test, y_test = get_x_and_y(
+        eval_test, not_x_labels, y_label)
+    return X_train, y_train, X_test, y_test
+
+
+def evaluate_model_using_kfolds(model, model_setup, config):
+    X_train_eval, y_train_eval, _, _ = get_xs_and_ys(
+        config.evaluation_data_set_frames['evaluation_training_data_set'],
+        config.evaluation_data_set_frames['evaluation_testing_data_set'],
+        config.meta_columns + [config.y_label], config.y_label
+    )
+
+    results = kfolds_evaluation(
+        X_train_eval, y_train_eval, model,
+        config.fitting_parameters[model_setup.name]
+    )
+    results.print_mean_results()
+    return results
+
+
+def evaluate_model_against_evaluation_data(model, model_setup, config):
+    X_train_eval, y_train_eval, X_test_eval, y_test_eval = get_xs_and_ys(
+        config.evaluation_data_set_frames['evaluation_training_data_set'],
+        config.evaluation_data_set_frames['evaluation_testing_data_set'],
+        config.meta_columns + [config.y_label], config.y_label
+    )
+
+    results = evaluate_model(
+        X_train_eval, y_train_eval,
+        X_test_eval, y_test_eval,
+        model,
+        config.fitting_parameters[model_setup.name]
+    )
+    return results
 
 
 def print_coefs(feature_names, model):
@@ -113,16 +165,16 @@ class ValidationResults(object):
 
 def kfolds_evaluation(X, y, model, fitting_parameters):
     kfr = ValidationResults()
-    kf = KFold(y.shape[0], n_folds=3)
+    kf = StratifiedKFold(y, n_folds=3, shuffle=True, random_state=1)
+
     for train_index, test_index in kf:
         kfr.validate_model_and_add_result(
             model,
-            X.values[train_index, :], y.values[train_index],
-            X.values[test_index], y.values[test_index],
+            X.iloc[train_index], y.iloc[train_index],
+            X.iloc[test_index], y.iloc[test_index],
             fitting_parameters,
             verbose=True
         )
-
     return kfr
 
 

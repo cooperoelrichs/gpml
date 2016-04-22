@@ -206,7 +206,7 @@ def make_a_submission(model_setup, config):
     print('Finished.')
 
 
-def evaluate_model_against_local_data(model, model_setup, config):
+def evaluate_model_against_evaluation_data(model, model_setup, config):
     X_train_local, y_train_local, X_test_local, y_test_local = get_xs_and_ys(
         config.local_data_set_frames['local_training_data_set'],
         config.local_data_set_frames['local_testing_data_set'],

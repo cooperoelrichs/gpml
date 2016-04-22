@@ -1,15 +1,16 @@
-from . import santander_configer as configer
+from . import santander_configer
 from gpml.data_set import data_set_maker
 import pandas as pd
 
 
 def run(project_dir):
-    # extract_transform(project_dir)
+    extract_transform(project_dir)
     split_evaluation_train_and_test_data(project_dir)
 
 
 def get_config(project_dir):
-    return configer.from_json('santander/model/config.json', project_dir)
+    return santander_configer.from_json(
+        'santander/model/config.json', project_dir)
 
 
 def extract_transform(project_dir):

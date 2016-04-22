@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+import os
 
 
 def from_json(configer_variant_class, config_file, project_dir):
@@ -15,12 +16,13 @@ class ConfigerBase(object):
     def __init__(self, config, project_dir):
         self.project_dir = project_dir
         self.data_dir = self.project_dir + config['data_dir']
-
         self.model_dump_dir = self.data_dir + config['model_dump_dir']
+        self.submission_dir = self.data_dir + config['submission_dir']
+
+        self.maybe_create_dirs([self.model_dump_dir, self.submission_dir])
+
         self.model_dump_file_names = self.add_dir_to_names(
             config['model_dump_file_names'], self.model_dump_dir)
-
-        self.submission_dir = self.data_dir + config['submission_dir']
         self.submission_file_names = self.add_dir_to_names(
             config['submission_file_names'], self.submission_dir)
 
@@ -41,8 +43,13 @@ class ConfigerBase(object):
 
         self.parameter_grids = config['parameter_grids']
         self.fitting_parameters = config['fitting_parameters']
+        self.model_parameters = config['model_parameters']
 
         self.model_averaging_weights = config['model_averaging_weights']
+
+    def maybe_create_dirs(self, dirs):
+        for dir_path in dirs:
+            os.makedirs(dir_path, exist_ok=True)  # mkdir -p
 
     def add_dir_to_names(self, names, dir):
         names = dict([(name, dir + file_name)
