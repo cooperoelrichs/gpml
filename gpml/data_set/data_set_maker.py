@@ -3,6 +3,17 @@ from sklearn.cross_validation import train_test_split
 from .knn_linear_features import NearestNeighbourLinearFeatures
 
 
+def drop_columns_with_zero_variance(df):
+    columns_to_drop = []
+    for column in df.columns:
+        if len(df[column].unique()) == 1:
+            columns_to_drop.append(column)
+
+    print('Dropping %i columns with zero variance.' % len(columns_to_drop))
+    df = df.drop(columns_to_drop, axis=1)
+    return df
+
+
 def add_knn_linear_features(
         X_train, X_test, y_train, num_new_features=15, max_group_size=5):
     for X in [X_train, X_test]:
@@ -38,11 +49,11 @@ def add_knn_linear_features(
     return X_train, X_test
 
 
-def check_and_save_to_hdf(df, file_name, meta_columns):
-    if pd.isnull(df.drop(meta_columns, axis=1).values).any():
+def check_and_save_to_hdf(df, file_name, to_ignore):
+    if pd.isnull(df.drop(to_ignore, axis=1).values).any():
         raise RuntimeError(
             'df contains NaNs in these columns: %s'
-            % str(get_columns_with_na(df.drop(meta_columns, axis=1)))
+            % str(get_columns_with_na(df.drop(to_ignore, axis=1)))
         )
     print('Saving HDF: %s' % file_name)
     save_hdf(df, file_name)
@@ -56,10 +67,10 @@ def save_csv(df, file_name):
     df.to_csv(file_name, sep=',')
 
 
-def split_and_save_local_data(data, test_size,
-                              train_file_name, test_file_name):
-    train, test = train_test_split(data, test_size=test_size,
-                                   random_state=99)
+def split_and_save_evaluation_data(
+        data, test_size, train_file_name, test_file_name, labels):
+    train, test = train_test_split(
+        data, test_size=test_size, random_state=1, stratify=labels)
 
     print('Local Train shape: %i, %i' % train.shape)
     print('Local Test shape:  %i, %i' % test.shape)
@@ -83,9 +94,10 @@ def get_str_columns(df):
     return df.select_dtypes(include=['object']).columns
 
 
-def normalise_num_columns(df, non_feature_columns):
+def normalise_num_columns(df, to_ignore):
     num_columns = get_num_columns(df)
-    feature_num_columns = num_columns.difference(non_feature_columns)
+    feature_num_columns = num_columns.difference(to_ignore)
+    print('Normalising %i numerical columns' % len(feature_num_columns))
     df[feature_num_columns] = df[feature_num_columns].apply(
         lambda x: (x - x.mean()) / x.std()
     )

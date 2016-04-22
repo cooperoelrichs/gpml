@@ -34,7 +34,7 @@ class ConfigerBase(object):
         self.data_frames = self.open_data_files(self.file_names, 'csv')
         self.evaluation_test_size = config['evaluation_test_size']
 
-        self.not_x_labels = config['not_x_labels']
+        self.meta_columns = config['meta_columns']
         self.y_label = config['y_label']
         self.columns_to_remove = config['columns_to_remove']
         self.columns_to_not_one_hot = config['columns_to_not_one_hot']

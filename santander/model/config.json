@@ -35,8 +35,8 @@
         "evaluation_testing_data_set": "evaluation_testing_data_set.h5"
     },
 
-    "not_x_labels": [],
-    "y_label": "",
+    "meta_columns": ["ID"],
+    "y_label": "TARGET",
     "columns_to_remove__": [],
 
     "columns_to_remove": [],
