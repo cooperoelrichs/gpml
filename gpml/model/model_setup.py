@@ -191,27 +191,8 @@ class XGBModelSetup(ModelSetup):
         super().__init__(name, config)
 
     @staticmethod
-    def basic_model():
-        xgb = XGBCEarlyStoppingCV(
-            max_depth=9,
-            learning_rate=0.01,  # Boosting learning rate (xgb's "eta")
-            n_estimators=2000,  # num_boost_round
-            # silent=False,
-            objective='binary:logistic',
-            nthread=-1,
-            gamma=2,
-            min_child_weight=10,
-            max_delta_step=1,
-            subsample=0.96,
-            colsample_bytree=0.45,
-            colsample_bylevel=1,
-            reg_alpha=1,  # (xgb's alpha), L2 regularization term
-            reg_lambda=1,  # (xgb's lambda), L1 regularization term
-            # scale_pos_weight=1.0,
-            # base_score=0.5,
-            # seed=1,
-            # missing=None
-        )
+    def basic_model(model_parameters):
+        xgb = XGBCEarlyStoppingCV(**model_parameters)
         return xgb
 
     @staticmethod

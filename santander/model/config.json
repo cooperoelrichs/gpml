@@ -97,6 +97,27 @@
             "class_weight": "balanced",
             "random_state": 1,
             "solver": "lbfgs"
+        },
+
+        "XGBCEarlyStoppingCV": {
+            "objective": "binary:logistic",
+            "class_weight": "balanced",
+            "n_estimators": 1500,
+            "learning_rate": 0.01,
+            "max_depth": 11,
+            "min_child_weight": 100,
+            "subsample": 0.96,
+            "colsample_bytree": 0.45,
+
+            "gamma": 2,
+            "max_delta_step": 1,
+            "colsample_bylevel": 1,
+            "reg_alpha": 1,
+            "reg_lambda": 1,
+
+            "eval_metric": "auc",
+            "nthread": -1,
+            "silent": true
         }
     },
 

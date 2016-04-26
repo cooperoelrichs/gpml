@@ -20,11 +20,9 @@ def get_x_and_y(df, not_x_labels, y_label):
     return get_x(df, not_x_labels), get_y(df, y_label)
 
 
-def get_xs_and_ys(eval_train, eval_test, not_x_labels, y_label):
-    X_train, y_train = get_x_and_y(
-        eval_train, not_x_labels, y_label)
-    X_test, y_test = get_x_and_y(
-        eval_test, not_x_labels, y_label)
+def get_xs_and_ys(train, test, not_x_labels, y_label):
+    X_train, y_train = get_x_and_y(train, not_x_labels, y_label)
+    X_test, y_test = get_x_and_y(test, not_x_labels, y_label)
     return X_train, y_train, X_test, y_test
 
 
@@ -132,11 +130,14 @@ class ValidationResults(object):
     def print_mean_results(self):
         accuracies = self.get_accuracies()
         log_losses = self.get_log_losses()
+        roc_aucs = self.get_roc_aucs()
 
         print("Mean accuracy: %.3f (+/- %.3f)"
               % (accuracies.mean(), accuracies.std() * 2))
         print("Mean LL: %.5f (+/- %.3f)"
               % (log_losses.mean(), log_losses.std() * 2))
+        print("Mean AUC: %.5f (+/- %.3f)"
+              % (roc_aucs.mean(), roc_aucs.std() * 2))
 
     def validate_model_and_add_result(
             self, model, X_train, y_train, X_test, y_test,
@@ -182,8 +183,8 @@ def evaluate_model(X_train, y_train,
                    X_test, y_test,
                    model, fitting_parameters):
     kfr = ValidationResults()
-    kfr.validate_model_and_add_result(model, X_train, y_train, X_test, y_test,
-                                      fitting_parameters)
+    kfr.validate_model_and_add_result(
+        model, X_train, y_train, X_test, y_test, fitting_parameters)
     kfr.print_results()
     return kfr.get_mean_results()
 
@@ -192,6 +193,26 @@ def print_result_from_dict(result_dict):
     kfr = ValidationResults()
     kfr.append(**result_dict)
     kfr.print_results()
+
+
+def train_make_and_save_submission(model_setup, config):
+    print('\nTraining on the entire data set, and making predictions.')
+    config.open_data_sets()
+    X_train, y_train = get_x_and_y(
+        config.data_set_frames['training_data_set'],
+        config.meta_columns + [config.y_label], config.y_label)
+    X_submission = get_x(
+        config.data_set_frames['testing_data_set'],
+        config.meta_columns + [config.y_label])
+
+    id_column = config.data_set_frames['testing_data_set']['ID']
+    make_and_save_submission(
+        X_train, y_train,
+        X_submission, id_column,
+        model_setup.model,
+        config.fitting_parameters[model_setup.name],
+        config.submission_file_names[model_setup.name]
+    )
 
 
 def make_and_save_submission(X_train, y_train,

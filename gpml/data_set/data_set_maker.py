@@ -206,11 +206,13 @@ def scale_dummy_columns(df):
     return df
 
 
-def make_data_set(config):
-    pass
-    # check_and_save_to_hdf(data_set, config.data_set_file_name)
-
-
-def make_submission_set(config):
-    pass
-    # check_and_save_to_hdf(submission, config.submission_data_set_file_name)
+def split_evaluation_train_and_test_data(config):
+    print('\nSplitting the data set for local evaluation')
+    config.open_data_sets()
+    split_and_save_evaluation_data(
+        config.data_set_frames['training_data_set'],
+        config.evaluation_test_size,
+        config.evaluation_data_set_names['evaluation_training_data_set'],
+        config.evaluation_data_set_names['evaluation_testing_data_set'],
+        config.data_set_frames['training_data_set'][config.y_label]
+    )
