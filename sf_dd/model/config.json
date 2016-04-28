@@ -1,0 +1,36 @@
+{
+    "data_dir": "state-farm-distracted-driver-detection/",
+    "model_dump_dir": "model_dumps/",
+    "submission_dir": "submissions/",
+    "submission_file_names": {},
+    "evaluation_test_size": 0.30,
+
+    "driver_imgs_list": "driver_imgs_list.csv",
+
+    "submission_file_names": {},
+
+    "meta_columns": [],
+    "y_label": "",
+
+    "submission_file_names": {},
+    "model_dump_file_names": {},
+    "model_averaging_weights": {},
+
+    "fitting_parameters": {
+        "BasicNN": {}
+    },
+
+    "model_parameters": {
+        "LogisticRegression": {
+            "penalty": "l2",
+            "C": 0.1,
+            "class_weight": "balanced",
+            "random_state": 1,
+            "solver": "lbfgs"
+        }
+    },
+
+    "parameter_grids": {
+        "LogisticRegression": [{"C": [0.01, 0.1, 1], "penalty": ["l2", "l1"]}]
+    }
+}

@@ -18,33 +18,20 @@ class ConfigerBase(object):
         self.data_dir = self.project_dir + config['data_dir']
         self.model_dump_dir = self.data_dir + config['model_dump_dir']
         self.submission_dir = self.data_dir + config['submission_dir']
-
         self.maybe_create_dirs([self.model_dump_dir, self.submission_dir])
+        self.evaluation_test_size = config['evaluation_test_size']
 
         self.model_dump_file_names = self.add_dir_to_names(
             config['model_dump_file_names'], self.model_dump_dir)
         self.submission_file_names = self.add_dir_to_names(
             config['submission_file_names'], self.submission_dir)
 
-        self.file_names = self.add_dir_to_names(
-            config['file_names'], self.data_dir)
-        self.data_set_names = self.add_dir_to_names(
-            config['data_set_names'], self.data_dir)
-        self.evaluation_data_set_names = self.add_dir_to_names(
-            config['evaluation_data_set_names'], self.data_dir)
-
-        self.data_frames = self.open_data_files(self.file_names, 'csv')
-        self.evaluation_test_size = config['evaluation_test_size']
-
         self.meta_columns = config['meta_columns']
         self.y_label = config['y_label']
-        self.columns_to_remove = config['columns_to_remove']
-        self.columns_to_not_one_hot = config['columns_to_not_one_hot']
 
         self.parameter_grids = config['parameter_grids']
         self.fitting_parameters = config['fitting_parameters']
         self.model_parameters = config['model_parameters']
-
         self.model_averaging_weights = config['model_averaging_weights']
 
     def maybe_create_dirs(self, dirs):
@@ -56,6 +43,25 @@ class ConfigerBase(object):
                       for name, file_name in names.items()
                       ])
         return names
+
+
+class StandardKaggleConfiger(ConfigerBase):
+    """Works with the standard Kaggle test and train csv data files."""
+
+    def __init__(self, config, project_dir):
+        super.__init__(config, project_dir)
+
+        self.file_names = self.add_dir_to_names(
+            config['file_names'], self.data_dir)
+        self.data_set_names = self.add_dir_to_names(
+            config['data_set_names'], self.data_dir)
+        self.evaluation_data_set_names = self.add_dir_to_names(
+            config['evaluation_data_set_names'], self.data_dir)
+
+        self.data_frames = self.open_data_files(self.file_names, 'csv')
+
+        self.columns_to_remove = config['columns_to_remove']
+        self.columns_to_not_one_hot = config['columns_to_not_one_hot']
 
     def open_data_files(self, file_names, file_type):
         frames = {}
@@ -78,13 +84,3 @@ class ConfigerBase(object):
         evaluation_data_set_frames = self.open_data_files(
             self.evaluation_data_set_names, 'hdf')
         self.evaluation_data_set_frames = evaluation_data_set_frames
-
-        # If Mutable
-        # def __init__(self):
-        #     self._name = ''
-        # @property
-        # def name(self):
-        #     return self._name
-        # @name.setter
-        # def name(self, value):
-        #     self._name = value
