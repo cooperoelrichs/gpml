@@ -11,3 +11,5 @@ class DistractedDriverConfiger(configer.ConfigerBase):
         super().__init__(config, project_dir)
 
         self.driver_imgs_list = self.data_dir + config['driver_imgs_list']
+        self.evaluation_imgs_list = self.add_dir_to_names(
+            config['evaluation_imgs_list'], self.data_dir)

@@ -6,6 +6,10 @@
     "evaluation_test_size": 0.30,
 
     "driver_imgs_list": "driver_imgs_list.csv",
+    "evaluation_imgs_list": {
+        "train": "evaluation_imgs_list-training.csv",
+        "test": "evaluation_imgs_list-testing.csv"
+    },
 
     "submission_file_names": {},
 
