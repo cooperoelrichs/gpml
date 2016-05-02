@@ -43,13 +43,13 @@ def train_and_validate_simple_nn(config):
     Based on:
     https://www.kaggle.com/florianm/state-farm-distracted-driver-detection/theano-lasange-starter
     """
-    pixels = 24
+    pixels = 24 * 2
     image_size = pixels * pixels
     num_features = image_size
 
     batch_size = 32
-    learning_rate = 0.001
-    iterations = 2
+    learning_rate = 0.001 / 2
+    iterations = 60
 
     X = T.tensor4('X')
     Y = T.ivector('y')
@@ -89,11 +89,11 @@ def train_and_validate_simple_nn(config):
 
     # Load the training and validation data sets.
     train_X, train_y, valid_X, valid_y, encoder = load_train_cv(
-        encoder, pixels, num_features)
+        config, encoder, pixels, num_features)
     print('Train shape:', train_X.shape, 'Test shape:', valid_X.shape)
 
     # load data
-    X_test, X_test_id = load_test(pixels, num_features)
+    X_test, X_test_id = load_test(config, pixels, num_features)
 
     # Loop over training functions for however many iterations,
     # print information while training.
@@ -135,26 +135,25 @@ def train_and_validate_simple_nn(config):
 
     # make predictions
     print('Making predictions')
-    PRED_BATCH = 2
+    prediction_batch = 2
 
     predictions = []
-    for pred_batch in iterate_pred_minibatches(X_test, PRED_BATCH):
+    for pred_batch in iterate_pred_minibatches(X_test, prediction_batch):
         predictions.extend(predict_proba(pred_batch))
-
     predictions = np.array(predictions)
 
     print('pred shape')
     print(predictions.shape)
 
     print('Creating Submission')
-    create_submission(predictions, X_test_id)
+    create_submission(config, predictions, X_test_id)
 
 
-def create_submission(predictions, test_id):
+def create_submission(config, predictions, test_id):
     columns = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9']
     result1 = pd.DataFrame(predictions, columns=columns)
     result1.loc[:, 'img'] = pd.Series(test_id, index=result1.index)
-    result1.to_csv('submission_ZFTurboNet.csv', index=False)
+    result1.to_csv(config.submission_file_names["ZFTurboNet"], index=False)
 
 
 def iterate_pred_minibatches(inputs, batchsize):
@@ -163,16 +162,21 @@ def iterate_pred_minibatches(inputs, batchsize):
         yield inputs[excerpt]
 
 
-def load_train_cv(encoder, pixels, num_features):
+def load_train_cv(config, encoder, pixels, num_features):
     X_train = []
     y_train = []
     print('Read train images')
     for j in range(10):
-        print('Load folder c{}'.format(j))
-        path = os.path.join('..', 'input', 'train', 'c' + str(j), '*.jpg')
+        # path = os.path.join('..', 'input', 'train', 'c' + str(j), '*.jpg')
+        path = os.path.join(config.image_dirs['train'], 'c' + str(j), '*.jpg')
         files = glob.glob(path)
+        print('Load folder c%i: %i images' % (j, len(files)))
         for fl in files:
             img = cv2.imread(fl, 0)
+
+            if img is None:
+                raise RuntimeError('Image reading failed: %s' % fl)
+
             img = cv2.resize(img, (pixels, pixels))
             # img = img.transpose(2, 0, 1)
             img = np.reshape(img, (1, num_features))
@@ -182,24 +186,28 @@ def load_train_cv(encoder, pixels, num_features):
     X_train = np.array(X_train)
     y_train = np.array(y_train)
 
+    print('Memory size (array.nbytes): %i MB' % (X_train.nbytes / 1024**2))
+
     y_train = encoder.fit_transform(y_train).astype('int32')
-
     X_train, y_train = shuffle(X_train, y_train)
-
     X_train, X_test, y_train, y_test = train_test_split(
         X_train, y_train, test_size=0.1)
 
     X_train = X_train.reshape(
-        X_train.shape[0], 1, pixels, pixels).astype('float32') / 255.
+        X_train.shape[0], 1, pixels, pixels
+    ).astype('float32') / 255.0
+
     X_test = X_test.reshape(
-        X_test.shape[0], 1, pixels, pixels).astype('float32') / 255.
+        X_test.shape[0], 1, pixels, pixels
+    ).astype('float32') / 255.0
 
     return X_train, y_train, X_test, y_test, encoder
 
 
-def load_test(pixels, num_features):
+def load_test(config, pixels, num_features):
     print('Read test images')
-    path = os.path.join('..', 'input', 'test', '*.jpg')
+    # path = os.path.join('..', 'input', 'test', '*.jpg')
+    path = os.path.join(config.image_dirs['test'], '*.jpg')
     files = glob.glob(path)
     X_test = []
     X_test_id = []
@@ -219,6 +227,7 @@ def load_test(pixels, num_features):
 
     X_test = np.array(X_test)
     X_test_id = np.array(X_test_id)
+    print('Memory size (array.nbytes): %i MB' % (X_test.nbytes / 1024**2))
 
     X_test = X_test.reshape(
         X_test.shape[0], 1, pixels, pixels).astype('float32') / 255.
