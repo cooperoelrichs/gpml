@@ -21,6 +21,16 @@ from lasagne.nonlinearities import rectify, softmax
 from lasagne.layers import InputLayer, MaxPool2DLayer, DenseLayer
 from lasagne.layers import Conv2DLayer as ConvLayer
 
+from keras.models import Sequential
+from keras.layers.core import Dense, Activation
+# from keras.layers.convolutional import Convolution2D, MaxPooling2D
+# from keras.layers.normalization import BatchNormalization
+# from keras.optimizers import SGD
+# from keras.optimizers import Adam
+# from keras.utils import np_utils
+# from keras.models import model_from_json
+# from keras.preprocessing.image import ImageDataGenerator
+
 import theano
 from theano import tensor as T
 
@@ -34,6 +44,27 @@ def run(project_dir):
 def get_config(project_dir):
     return distracted_driver_configer.from_json(
         'sf_dd/model/config.json', project_dir)
+
+
+def train_and_validate_keras():
+    model = Sequential([
+        Convolution2D(32, 3, 3, border_mode='valid', input_shape=shape),
+        Activation('relu'),
+        Dense(32, input_shape=(x, y)),
+        Activation('relu'),
+        Dense(10),
+        Activation('softmax'),
+    ])
+
+    model.compile(
+        optimizer='rmsprop',
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    model.fit(data, labels, nb_epoch=10, batch_size=32)
+    model.evaluate(x, y, batch_size=32, verbose=1, sample_weight=None)
+    # model.predict(x, batch_size=32, verbose=0)
 
 
 def train_and_validate_simple_nn(config):
