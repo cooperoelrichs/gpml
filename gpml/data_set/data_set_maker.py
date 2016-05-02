@@ -1,4 +1,7 @@
 import pandas as pd
+import numpy as np
+import tables
+import os
 from sklearn.cross_validation import train_test_split
 from .knn_linear_features import NearestNeighbourLinearFeatures
 
@@ -57,6 +60,23 @@ def check_and_save_to_hdf(df, file_name, to_ignore):
         )
     print('Saving HDF: %s' % file_name)
     save_hdf(df, file_name)
+
+
+def check_and_save_array_to_hdf(x, file_name):
+    if np.isnan(x).any():
+        raise RuntimeError('Array contains NaNs')
+    print('Saving HDF: %s' % file_name)
+    save_array_to_hdf(x, file_name)
+
+
+def save_array_to_hdf(x, file_name):
+    name = os.path.splitext(os.path.basename(file_name))[0]
+
+    f = tables.openFile(file_name, 'w')
+    atom = tables.Atom.from_dtype(x.dtype)
+    ds = f.createCArray(f.root, name, atom, x.shape)
+    ds[:] = x
+    f.close()
 
 
 def save_hdf(df, file_name):

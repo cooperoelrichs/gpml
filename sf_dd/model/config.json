@@ -2,8 +2,8 @@
     "data_dir": "state-farm-distracted-driver-detection/",
     "model_dump_dir": "model_dumps/",
     "submission_dir": "submissions/",
-    "submission_file_names": {},
     "evaluation_test_size": 0.30,
+    "sample_submission": "sample_submission.csv",
 
     "driver_imgs_list": "driver_imgs_list.csv",
     "evaluation_imgs_list": {
@@ -11,12 +11,25 @@
         "test": "evaluation_imgs_list-testing.csv"
     },
 
-    "submission_file_names": {},
+    "data_sets": {
+        "training_images": "training_images.h5",
+        "testing_images": "testing_images.h5"
+    },
+
+    "image_dirs": {
+        "train": "imgs/train/",
+        "test": "imgs/test/"
+    },
+
+    "image_size": [96, 96],
+
+    "submission_file_names": {
+        "ZFTurboNet": "ZFTurboNet.csv"
+    },
 
     "meta_columns": [],
     "y_label": "",
 
-    "submission_file_names": {},
     "model_dump_file_names": {},
     "model_averaging_weights": {},
 
