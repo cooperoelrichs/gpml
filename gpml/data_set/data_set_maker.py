@@ -70,13 +70,26 @@ def check_and_save_array_to_hdf(x, file_name):
 
 
 def save_array_to_hdf(x, file_name):
-    name = os.path.splitext(os.path.basename(file_name))[0]
+    name = seperate_base_name(file_name)
 
-    f = tables.openFile(file_name, 'w')
+    f = tables.open_file(file_name, 'w')
+    # f.create_carray(f.root, name, x)
     atom = tables.Atom.from_dtype(x.dtype)
-    ds = f.createCArray(f.root, name, atom, x.shape)
+    ds = f.create_carray(f.root, name, atom, x.shape)
     ds[:] = x
     f.close()
+
+
+def open_array_from_hdf(file_name):
+    name = seperate_base_name(file_name)
+    f = tables.open_file(file_name, 'r')
+    x = np.array(f.get_node('/' + name))
+    f.close()
+    return x
+
+
+def seperate_base_name(file_name):
+    return os.path.splitext(os.path.basename(file_name))[0]
 
 
 def save_hdf(df, file_name):

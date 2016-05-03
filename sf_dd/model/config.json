@@ -21,10 +21,10 @@
         "test": "imgs/test/"
     },
 
-    "image_size": [96, 96],
+    "image_size": [1, 96, 96],
 
     "submission_file_names": {
-        "ZFTurboNet": "ZFTurboNet.csv"
+        "SimpleNet": "simple_net"
     },
 
     "meta_columns": [],

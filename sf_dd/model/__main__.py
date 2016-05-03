@@ -19,7 +19,7 @@ def main():
             raise ValueError(
                 "Project Directory (-pd) is required for making a model")
 
-        print('Making model - project_dir: %s' % args.project_directory)
+        print('\nMaking model - project_dir: %s' % args.project_directory)
         make_model.run(args.project_directory)
 
 

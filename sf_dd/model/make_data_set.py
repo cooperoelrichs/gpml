@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import numpy as np
 import cv2
-import tables
 from sklearn.cross_validation import train_test_split
 
 from . import distracted_driver_configer
@@ -41,27 +40,58 @@ def extract_transform(config):
          config.data_sets['testing_images']]
     ]:
         # image_list = image_list[0:9]
-        images = load_images(config, directory, image_list)
+        images = load_images(
+            directory, image_list,
+            (config.image_size[1], config.image_size[2]),
+            cv2.IMREAD_GRAYSCALE
+        )
+        images = normalise_images(images)
         data_set_maker.check_and_save_array_to_hdf(images, output)
 
 
-def load_images(config, directory, image_list):
+def load_images(directory, image_list, image_size, colour_flag):
     print('Loading %i images' % len(image_list))
-    x, y = config.image_size
-    images = np.empty((len(image_list), x, y), dtype='uint8')
+    x, y = image_size
+    channels = channels_from_colours(colour_flag)
+    images = np.empty((len(image_list), channels, x, y), dtype='uint8')
 
     for i, img_name in image_list.iteritems():
         image_path = os.path.join(directory, img_name)
-        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        image = cv2.imread(image_path, colour_flag)
         if image is None:
             raise RuntimeError('Image reading failed: %s' % image_path)
 
-        image = cv2.resize(image, config.image_size)
+        image = cv2.resize(image, image_size)
         # image = image.transpose(2, 0, 1)
         # image = np.reshape(image, (1, num_features)
 
-        images[i, :, :] = image
+        if channels == 1:
+            # Add an empty dimension to gray scale images
+            image = np.expand_dims(image, axis=0)
+        images[i, :, :, :] = image
 
+    return images
+
+
+def channels_from_colours(colour_flag):
+    if colour_flag == cv2.IMREAD_GRAYSCALE:
+        channels = 1
+    elif colour_flag == cv2.IMREAD_COLOUR:
+        channels = 3
+    else:
+        raise RuntimeError('Colour flag not suported.')
+    return channels
+
+
+def normalise_images(images, rescale=False):
+    if rescale:
+        if images.dtype == 'uint8':
+            images = images.as_type('float32')
+            images /= 255  # 8 bit images
+        else:
+            raise RuntimeError('Image dtype, %s, not supported' % images.dtype)
+
+    images -= int(images.mean())
     return images
 
 
