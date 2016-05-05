@@ -17,7 +17,7 @@ class ModelSetup(object):
     def __init__(self, name, config):
         self.name = name
         self.model_parameters = config.model_parameters[self.name]
-        self.model = self.basic_model(self.model_parameters)
+        self.model = self.make_model(self.model_parameters)
         self.parameter_grid = config.parameter_grids[self.name]
 
     def json_load(self, file_name):

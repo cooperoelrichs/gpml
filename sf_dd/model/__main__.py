@@ -42,6 +42,7 @@ def parse_args():
     )
 
     args = parser.parse_args()
+    print('Finished.')
     return args
 
 if __name__ == '__main__':

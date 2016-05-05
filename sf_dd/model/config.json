@@ -21,10 +21,10 @@
         "test": "imgs/test/"
     },
 
-    "image_size": [1, 96, 96],
+    "image_size": [1, 64, 64],
 
     "submission_file_names": {
-        "SimpleNet": "simple_net"
+        "SimpleConvNet": "simple_conv_net"
     },
 
     "meta_columns": [],
@@ -32,22 +32,7 @@
 
     "model_dump_file_names": {},
     "model_averaging_weights": {},
-
-    "fitting_parameters": {
-        "BasicNN": {}
-    },
-
-    "model_parameters": {
-        "LogisticRegression": {
-            "penalty": "l2",
-            "C": 0.1,
-            "class_weight": "balanced",
-            "random_state": 1,
-            "solver": "lbfgs"
-        }
-    },
-
-    "parameter_grids": {
-        "LogisticRegression": [{"C": [0.01, 0.1, 1], "penalty": ["l2", "l1"]}]
-    }
+    "fitting_parameters": {},
+    "model_parameters": { "SimpleConvNet": {} },
+    "parameter_grids": { "SimpleConvNet": {} }
 }

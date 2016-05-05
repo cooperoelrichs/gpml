@@ -11,7 +11,7 @@ from gpml.data_set import data_set_maker
 def run(project_dir):
     config = get_config(project_dir)
     extract_transform(config)
-    # split_evaluation_data(config)
+    # split_evaluation_data(config)  # Not enough data for this.
 
 
 def get_config(project_dir):
@@ -32,12 +32,16 @@ def extract_transform(config):
     testing_image_list = pd.read_csv(config.sample_submission)['img']
 
     for image_list, directory, output in [
-        [training_image_list,
-         config.image_dirs['train'],
-         config.data_sets['training_images']],
-        [testing_image_list,
-         config.image_dirs['test'],
-         config.data_sets['testing_images']]
+        [
+            training_image_list,
+            config.image_dirs['train'],
+            config.data_sets['training_images']
+        ],
+        [
+            testing_image_list,
+            config.image_dirs['test'],
+            config.data_sets['testing_images']
+        ]
     ]:
         # image_list = image_list[0:9]
         images = load_images(
