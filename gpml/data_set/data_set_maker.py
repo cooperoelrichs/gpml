@@ -96,10 +96,6 @@ def save_hdf(df, file_name):
     df.to_hdf(file_name, key='table', append=False)
 
 
-def save_csv(df, file_name):
-    df.to_csv(file_name, sep=',')
-
-
 def split_and_save_evaluation_data(
         data, test_size, train_file_name, test_file_name, labels):
     train, test = train_test_split(

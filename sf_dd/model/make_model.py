@@ -80,12 +80,13 @@ def make_submission_from_preductions(
     sample_submission = pd.read_csv(sample_submission_path)
     submission = pd.DataFrame(
         data=predictions,
-        columns=sample_submission.columns, index=sample_submission.index
+        columns=sample_submission.columns[1:], index=sample_submission.index
     )
+    submission['img'] = sample_submission['img']
 
     date_time_str = get_datetime_str()
-    file_name = submission_name + date_time_str + '.csv'
-    data_set_maker.save_csv(submission, file_name)
+    file_name = '%s_%s.csv' % (submission_name, date_time_str)
+    submission.to_csv(file_name, sep=',', index=False)
 
 
 def load_data(config):
