@@ -27,6 +27,13 @@ def get_config(project_dir):
 
 
 def train_and_validate_keras(config):
+    # Rotate images by random(-10, 10).
+    # Rescale pixels (/= 255) - test this.
+    # Centre the pixel average (-= X.mean) - test this.
+    # Centre the average of each image (-= img.mean) - test this.
+    # Submission based on CV average.
+    # New NN.
+
     X, y, X_train, y_train, X_test, y_test, X_subm = load_data(config)
 
     model = Sequential([
