@@ -1,3 +1,5 @@
+import numpy as np
+from math import floor
 from .model_setup import ModelSetup
 
 from keras.models import Sequential
@@ -12,10 +14,13 @@ class SimpleConvNet(ModelSetup):
 
     def __init__(self, config):
         name = 'SimpleConvNet'
-        self.cv_folds = 5
-        self.nb_epoch = 20
+        self.nb_epoch = floor(np.mean([4, 12, 12, 12, 20]))
+        self.es_max_epoch = 50
         self.batch_size = 64
         self.image_size = config.image_size
+
+        self.cv_folds = 5
+        self.es_patience = 3
 
         super().__init__(name, config)
 
@@ -47,6 +52,10 @@ class SimpleConvNet(ModelSetup):
         )
 
         return model
+
+    def regenerate_model(self):
+        print('Regenerating model.')
+        self.model = self.make_model(None)
 
     def dump_model(self, model, results, file_name):
         raise NotImplementedError()

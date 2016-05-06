@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 import datetime
 from keras.utils import np_utils
-from keras.callbacks import EarlyStopping
+# from keras.callbacks import EarlyStopping
 from sklearn.cross_validation import KFold
 
 from gpml.data_set import data_set_maker
 # from gpml.model import model_maker
 from . import distracted_driver_configer
+from gpml.model.best_only_early_stopping import BestOnlyEarlyStopping
 
 from gpml.model.keras_models import SimpleConvNet
 
@@ -26,8 +27,9 @@ def get_config(project_dir):
 
 def train_and_validate_simple_conv_net(config):
     # TODO:
+    # Why is LB score so bad?
+    #
     # Rotate images by random(-10, 10).
-    # Rescale pixels (/= 255) - test this.
     # Centre the pixel average (-= X.mean) - test this.
     # Centre the average of each image (-= img.mean) - test this.
     # Submission based on CV average.
@@ -40,20 +42,21 @@ def train_and_validate(config, model_setup):
     X, y, X_subm, image_list = load_data(config)
 
     print('Cross Validating model.')
-    evaluate_model_using_kfolds(X, y, model_setup, config, image_list)
+    cross_validate_model(X, y, model_setup, config, image_list)
 
-    print('\nTraining full model.')
-    callbacks = [EarlyStopping(monitor='train_loss', patience=1, verbose=0)]
+    print('\nTraining full model with %i epochs.' % model_setup.nb_epoch)
+    # callbacks = [EarlyStopping(monitor='train_loss', patience=1, verbose=0)]
+    model_setup.regenerate_model()
     model_setup.model.fit(
         X, y,
         batch_size=model_setup.batch_size, nb_epoch=model_setup.nb_epoch,
-        shuffle=True, verbose=1,
-        callbacks=callbacks
+        shuffle=True, verbose=2,
+        # callbacks=callbacks
     )
 
     print('\nMaking and saving a submission.')
     predictions = model_setup.model.predict_proba(
-        X_subm, batch_size=model_setup.batch_size, verbose=0
+        X_subm, batch_size=model_setup.batch_size, verbose=2
     )
     make_submission_from_preductions(
         predictions, config.sample_submission,
@@ -61,17 +64,12 @@ def train_and_validate(config, model_setup):
     )
 
 
-def evaluate_model_using_kfolds(X, y, model_setup, config, image_list):
+def cross_validate_model(X, y, model_setup, config, image_list):
     unique_subjects = np.unique(image_list['subject'].values)
     kf = KFold(
         len(unique_subjects), n_folds=model_setup.cv_folds,
         shuffle=True, random_state=1
     )
-
-    callbacks = [
-        EarlyStopping(monitor='val_loss', patience=1, verbose=0)
-        # ModelCheckpoint(path, monitor='val_loss', save_best_only=True)
-    ]
 
     cv_results = np.empty((model_setup.cv_folds, 2))
     print('Starting CV with %i folds:' % model_setup.cv_folds)
@@ -81,20 +79,31 @@ def evaluate_model_using_kfolds(X, y, model_setup, config, image_list):
         X_train, y_train = split_on_subject(X, y, image_list, train_subjects)
         X_test, y_test = split_on_subject(X, y, image_list, test_subjects)
 
+        callbacks = [
+            BestOnlyEarlyStopping(
+                monitor='val_loss',
+                patience=model_setup.es_patience,
+                verbose=0
+            )
+            # ModelCheckpoint(path, monitor='val_loss', save_best_only=True)
+        ]
+
+        model_setup.regenerate_model()
         model_setup.model.fit(
             X_train, y_train,
-            batch_size=model_setup.batch_size, nb_epoch=model_setup.nb_epoch,
-            shuffle=True, verbose=1, validation_data=(X_test, y_test),
+            batch_size=model_setup.batch_size,
+            nb_epoch=model_setup.es_max_epoch,
+            shuffle=True, verbose=2, validation_data=(X_test, y_test),
             callbacks=callbacks
         )
 
         results = model_setup.model.evaluate(
             X_test, y_test, batch_size=model_setup.batch_size,
-            verbose=1, sample_weight=None
+            verbose=2, sample_weight=None
         )
 
         cv_results[i, :] = results
-        # print('%i. loss: %0.4f, acc: %0.4f' % (i, results[0], results[1]))
+        print('%i. loss: %0.4f, acc: %0.4f' % (i, results[0], results[1]))
 
     print('Mean CV loss: %0.4f, acc: %0.4f' % tuple(cv_results.mean(axis=0)))
 
@@ -129,6 +138,8 @@ def load_data(config):
     X_subm = data_set_maker.open_array_from_hdf(
         config.data_sets['testing_images'])
 
+    print('X: %s' % str(X.shape))
+    print('y: %s' % str(y.shape))
     return X, y, X_subm, img_list
 
 
