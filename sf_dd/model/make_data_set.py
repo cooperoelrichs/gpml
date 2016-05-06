@@ -1,4 +1,5 @@
 import os
+import random
 import pandas as pd
 import numpy as np
 import cv2
@@ -44,7 +45,7 @@ def extract_transform(config):
         ]
     ]:
         # image_list = image_list[0:9]
-        images = load_images(
+        images = load_and_transform_images(
             directory, image_list,
             (config.image_size[1], config.image_size[2]),
             cv2.IMREAD_GRAYSCALE
@@ -53,7 +54,7 @@ def extract_transform(config):
         data_set_maker.check_and_save_array_to_hdf(images, output)
 
 
-def load_images(directory, image_list, image_size, colour_flag):
+def load_and_transform_images(directory, image_list, image_size, colour_flag):
     print('Loading %i images' % len(image_list))
     x, y = image_size
     channels = channels_from_colours(colour_flag)
@@ -66,8 +67,7 @@ def load_images(directory, image_list, image_size, colour_flag):
             raise RuntimeError('Image reading failed: %s' % image_path)
 
         image = cv2.resize(image, image_size)
-        # image = image.transpose(2, 0, 1)
-        # image = np.reshape(image, (1, num_features)
+        image = random_rotation(image, (-10, 10))
 
         if channels == 1:
             # Add an empty dimension to gray scale images
@@ -75,6 +75,17 @@ def load_images(directory, image_list, image_size, colour_flag):
         images[i, :, :, :] = image
 
     return images
+
+
+def random_rotation(image, bounds):
+    rotation = random.uniform(**bounds)
+    rotation_matrix = cv2.getRotationMatrix2D(
+        (image.shape[1] / 2, image.shape[0] / 2), rotation, 1
+    )
+    image = cv2.warpAffine(
+        image, rotation_matrix, (image.shape[1], image.shape[0])
+    )
+    return image
 
 
 def channels_from_colours(colour_flag):
@@ -87,13 +98,12 @@ def channels_from_colours(colour_flag):
     return channels
 
 
-def normalise_images(images, rescale=False):
-    if rescale:
-        if images.dtype == 'uint8':
-            images = images.as_type('float32')
-            images /= 255  # 8 bit images
-        else:
-            raise RuntimeError('Image dtype, %s, not supported' % images.dtype)
+def normalise_images(images):
+    if images.dtype == 'uint8':
+        images = images.astype('float32')
+        images /= 255  # 8 bit images
+    else:
+        raise RuntimeError('Image dtype, %s, not supported' % images.dtype)
 
     images -= int(images.mean())
     return images
