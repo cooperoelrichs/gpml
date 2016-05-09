@@ -15,11 +15,12 @@ class SimpleConvNet(ModelSetup):
     def __init__(self, config):
         name = 'SimpleConvNet'
         self.nb_epoch = floor(np.mean([4, 12, 12, 12, 20]))
-        self.es_max_epoch = 50
+        self.es_max_epoch = 2
         self.batch_size = 64
         self.image_size = config.image_size
+        self.nb_classes = config.nb_classes
 
-        self.cv_folds = 5
+        self.cv_folds = 2
         self.es_patience = 3
 
         super().__init__(name, config)
@@ -42,7 +43,7 @@ class SimpleConvNet(ModelSetup):
             Dropout(0.5),
 
             Flatten(),
-            Dense(10),
+            Dense(self.nb_classes),
             Activation('softmax')
         ])
 
@@ -62,3 +63,35 @@ class SimpleConvNet(ModelSetup):
 
     def load_model(self, file_name):
         raise NotImplementedError()
+
+
+class AvgConvNet(SimpleConvNet):
+    """Average of multiple ConvNet models."""
+
+    def __init__(self, config):
+        name = 'AvgConvNet'
+        self.models = []
+
+        # self.nb_epoch = 20
+        self.es_max_epoch = 50
+        self.batch_size = 64
+        self.image_size = config.image_size
+        self.nb_classes = config.nb_classes
+
+        self.cv_folds = 26
+        self.es_patience = 3
+
+        ModelSetup.__init__(self, name, config)  # Ick.
+
+    def save_current_model(self):
+        self.models.append(self.model)
+
+    def predict_avg_proba(self, X, batch_size, verbose):
+        predictions = np.empty((X.shape[0], self.nb_classes, len(self.models)))
+        for i, model in enumerate(self.models):
+            probabilities = model.predict_proba(
+                X, batch_size=batch_size, verbose=verbose
+            )
+            predictions[:, :, i] = probabilities
+        avg_predictions = predictions.mean(axis=2)
+        return avg_predictions

@@ -3,6 +3,7 @@
     "model_dump_dir": "model_dumps/",
     "submission_dir": "submissions/",
     "evaluation_test_size": 0.30,
+    "nb_classes": 10,
     "sample_submission": "sample_submission.csv",
 
     "driver_imgs_list": "driver_imgs_list.csv",
@@ -24,7 +25,8 @@
     "image_size": [1, 64, 64],
 
     "submission_file_names": {
-        "SimpleConvNet": "simple_conv_net"
+        "SimpleConvNet": "simple_conv_net",
+        "AvgConvNet": "avg_conv_net"
     },
 
     "meta_columns": [],
@@ -33,6 +35,6 @@
     "model_dump_file_names": {},
     "model_averaging_weights": {},
     "fitting_parameters": {},
-    "model_parameters": { "SimpleConvNet": {} },
-    "parameter_grids": { "SimpleConvNet": {} }
+    "model_parameters": { "SimpleConvNet": {}, "AvgConvNet": {} },
+    "parameter_grids": { "SimpleConvNet": {}, "AvgConvNet": {} }
 }

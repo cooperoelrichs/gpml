@@ -10,13 +10,22 @@ from gpml.data_set import data_set_maker
 from . import distracted_driver_configer
 from gpml.model.best_only_early_stopping import BestOnlyEarlyStopping
 
-from gpml.model.keras_models import SimpleConvNet
+from gpml.model.keras_models import SimpleConvNet, AvgConvNet
 
 
 def run(project_dir):
+    # TODO:
+    # Why is LB score so bad?
+    #
+    # Rotate images by random(-10, 10).
+    # Centre the pixel average (-= X.mean) - test this.
+    # Centre the average of each image (-= img.mean) - test this.
+    # Submission based on CV average.
+
     config = get_config(project_dir)
     # train_and_validate_simple_nn(config)
-    train_and_validate_simple_conv_net(config)
+    # train_and_validate_simple_conv_net(config)
+    train_and_validate_averaged_conv_net(config)
     # make_lr_submission(config)
 
 
@@ -26,15 +35,12 @@ def get_config(project_dir):
 
 
 def train_and_validate_simple_conv_net(config):
-    # TODO:
-    # Why is LB score so bad?
-    #
-    # Rotate images by random(-10, 10).
-    # Centre the pixel average (-= X.mean) - test this.
-    # Centre the average of each image (-= img.mean) - test this.
-    # Submission based on CV average.
-
     model_setup = SimpleConvNet(config)
+    train_and_validate(config, model_setup)
+
+
+def train_and_validate_averaged_conv_net(config):
+    model_setup = AvgConvNet(config)
     train_and_validate(config, model_setup)
 
 
@@ -44,20 +50,24 @@ def train_and_validate(config, model_setup):
     print('Cross Validating model.')
     cross_validate_model(X, y, model_setup, config, image_list)
 
-    print('\nTraining full model with %i epochs.' % model_setup.nb_epoch)
+    # print('\nTraining full model with %i epochs.' % model_setup.nb_epoch)
     # callbacks = [EarlyStopping(monitor='train_loss', patience=1, verbose=0)]
-    model_setup.regenerate_model()
-    model_setup.model.fit(
-        X, y,
-        batch_size=model_setup.batch_size, nb_epoch=model_setup.nb_epoch,
-        shuffle=True, verbose=2,
-        # callbacks=callbacks
-    )
+    # model_setup.regenerate_model()
+    # model_setup.model.fit(
+    #     X, y,
+    #     batch_size=model_setup.batch_size, nb_epoch=model_setup.nb_epoch,
+    #     shuffle=True, verbose=2,
+    #     # callbacks=callbacks
+    # )
 
     print('\nMaking and saving a submission.')
-    predictions = model_setup.model.predict_proba(
+    # predictions = model_setup.model.predict_proba(
+    #     X_subm, batch_size=model_setup.batch_size, verbose=2
+    # )
+    predictions = model_setup.predict_avg_proba(
         X_subm, batch_size=model_setup.batch_size, verbose=2
     )
+
     make_submission_from_preductions(
         predictions, config.sample_submission,
         config.submission_dir, config.submission_file_names[model_setup.name]
@@ -104,6 +114,7 @@ def cross_validate_model(X, y, model_setup, config, image_list):
 
         cv_results[i, :] = results
         print('%i. loss: %0.4f, acc: %0.4f' % (i, results[0], results[1]))
+        model_setup.save_current_model()
 
     print('Mean CV loss: %0.4f, acc: %0.4f' % tuple(cv_results.mean(axis=0)))
 
