@@ -78,7 +78,7 @@ def load_and_transform_images(directory, image_list, image_size, colour_flag):
 
 
 def random_rotation(image, bounds):
-    rotation = random.uniform(**bounds)
+    rotation = random.uniform(*bounds)
     rotation_matrix = cv2.getRotationMatrix2D(
         (image.shape[1] / 2, image.shape[0] / 2), rotation, 1
     )
