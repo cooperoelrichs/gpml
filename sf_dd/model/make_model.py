@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import datetime
+import os
 from keras.utils import np_utils
 # from keras.callbacks import EarlyStopping
 from sklearn.cross_validation import KFold
@@ -10,7 +11,8 @@ from gpml.data_set import data_set_maker
 from . import distracted_driver_configer
 from gpml.model.best_only_early_stopping import BestOnlyEarlyStopping
 
-from gpml.model.keras_models import SimpleConvNet, AvgConvNet
+from gpml.model.keras_models import (
+    SimpleConvNet, AvgConvNet, ZFAvgConvNet)
 
 
 def run(project_dir):
@@ -26,6 +28,7 @@ def run(project_dir):
     # train_and_validate_simple_nn(config)
     # train_and_validate_simple_conv_net(config)
     train_and_validate_averaged_conv_net(config)
+    # train_and_validate_iterative_averaged_conv_net(config)
     # make_lr_submission(config)
 
 
@@ -41,36 +44,33 @@ def train_and_validate_simple_conv_net(config):
 
 def train_and_validate_averaged_conv_net(config):
     model_setup = AvgConvNet(config)
-    train_and_validate(config, model_setup)
+    train_and_validate_kfold_avg(config, model_setup)
 
 
-def train_and_validate(config, model_setup):
-    X, y, X_subm, image_list = load_data(config)
+def train_and_validate_iterative_averaged_conv_net(config):
+    model_setup = ZFAvgConvNet(config)
+    print('Running %s.' % model_setup.name)
+    train_and_validate_kfold_avg(config, model_setup)
+
+
+def train_and_validate_kfold_avg(config, model_setup):
+    X, y, image_list, X_subm, submission_ids = load_data(config)
+
+    print(X[0])
+    print(X_subm[0])
+    exit('!!!')
 
     print('Cross Validating model.')
     cross_validate_model(X, y, model_setup, config, image_list)
 
-    # print('\nTraining full model with %i epochs.' % model_setup.nb_epoch)
-    # callbacks = [EarlyStopping(monitor='train_loss', patience=1, verbose=0)]
-    # model_setup.regenerate_model()
-    # model_setup.model.fit(
-    #     X, y,
-    #     batch_size=model_setup.batch_size, nb_epoch=model_setup.nb_epoch,
-    #     shuffle=True, verbose=2,
-    #     # callbacks=callbacks
-    # )
-
     print('\nMaking and saving a submission.')
-    # predictions = model_setup.model.predict_proba(
-    #     X_subm, batch_size=model_setup.batch_size, verbose=2
-    # )
     predictions = model_setup.predict_avg_proba(
         X_subm, batch_size=model_setup.batch_size, verbose=2
     )
 
     make_submission_from_preductions(
-        predictions, config.sample_submission,
-        config.submission_dir, config.submission_file_names[model_setup.name]
+        predictions, submission_ids,
+        config.submission_file_names[model_setup.name], config
     )
 
 
@@ -98,7 +98,6 @@ def cross_validate_model(X, y, model_setup, config, image_list):
             # ModelCheckpoint(path, monitor='val_loss', save_best_only=True)
         ]
 
-        model_setup.regenerate_model()
         model_setup.model.fit(
             X_train, y_train,
             batch_size=model_setup.batch_size,
@@ -127,14 +126,12 @@ def split_on_subject(X, y, image_list, subjects):
 
 
 def make_submission_from_preductions(
-        predictions, sample_submission_path,
-        submission_dir, submission_name):
-    sample_submission = pd.read_csv(sample_submission_path)
+        predictions, submission_ids, submission_name, config):
     submission = pd.DataFrame(
         data=predictions,
-        columns=sample_submission.columns[1:], index=sample_submission.index
+        columns=config.class_names, index=submission_ids.index
     )
-    submission['img'] = sample_submission['img']
+    submission['img'] = submission_ids
 
     date_time_str = get_datetime_str()
     file_name = '%s_%s.csv' % (submission_name, date_time_str)
@@ -144,31 +141,42 @@ def make_submission_from_preductions(
 def load_data(config):
     X = data_set_maker.open_array_from_hdf(
         config.data_sets['training_images'])
-    y, img_list = load_y_and_img_list(config.driver_imgs_list)
+
+    y, img_list = load_y_and_img_list(
+        config.image_lists['training_images'], config.driver_imgs_list)
 
     X_subm = data_set_maker.open_array_from_hdf(
         config.data_sets['testing_images'])
+    submission_ids = pd.read_csv(config.image_lists['testing_images'])
 
     print('X: %s' % str(X.shape))
     print('y: %s' % str(y.shape))
-    return X, y, X_subm, img_list
+    return X, y, img_list, X_subm, submission_ids
 
 
-def load_y_and_img_list(list_path):
-    img_list = load_img_list(list_path)
-    y = convert_list(img_list['classname'])
+def load_y_and_img_list(ordered_ids, driver_image_list):
+    ordered_ids = pd.read_csv(ordered_ids, index_col='i')
+    img_list = pd.read_csv(driver_image_list)
+    ordered_img_list = order_image_list(img_list, ordered_ids)
+    y = convert_list(ordered_img_list['classname'])
     y = np_utils.to_categorical(y, 10)
-    return y, img_list
+    return y, ordered_img_list
+
+
+def order_image_list(img_list, ordered_ids):
+    ordered_image_names = pd.DataFrame({'img': ordered_ids.apply(
+        lambda a: os.path.basename(a['img']),
+        axis=1
+    )}, index=ordered_ids.index)
+    ordered_img_list = pd.merge(
+        ordered_image_names, img_list, on='img', how='left')
+    return ordered_img_list
 
 
 def split_training_subset(X, list_path):
     y, training_img_list = load_y_and_img_list(list_path)
     X = X[training_img_list.index]
     return X, y
-
-
-def load_img_list(list_path):
-    return pd.read_csv(list_path)
 
 
 def convert_list(class_names):

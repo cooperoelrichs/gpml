@@ -85,6 +85,7 @@ class AvgConvNet(SimpleConvNet):
 
     def save_current_model(self):
         self.models.append(self.model)
+        self.regenerate_model()
 
     def predict_avg_proba(self, X, batch_size, verbose):
         predictions = np.empty((X.shape[0], self.nb_classes, len(self.models)))
@@ -95,3 +96,41 @@ class AvgConvNet(SimpleConvNet):
             predictions[:, :, i] = probabilities
         avg_predictions = predictions.mean(axis=2)
         return avg_predictions
+
+
+class ZFAvgConvNet(SimpleConvNet):
+    """Odd attempt at replicating a script shared on Kaggle."""
+
+    def __init__(self, config):
+        name = 'ZFAvgConvNet'
+        self.models = []
+
+        # self.nb_epoch = 20
+        self.es_max_epoch = 50
+        self.batch_size = 64
+        self.image_size = config.image_size
+        self.nb_classes = config.nb_classes
+
+        self.cv_folds = 26
+        self.es_patience = 0
+
+        ModelSetup.__init__(self, name, config)  # Ick.
+
+    def save_current_model(self):
+        weights = self.model.get_weights()
+        model_copy = self.make_model(None)
+        model_copy.set_weights(weights)
+        self.models.append(model_copy)
+
+    def predict_avg_proba(self, X, batch_size, verbose):
+        predictions = np.empty((X.shape[0], self.nb_classes, len(self.models)))
+        for i, model in enumerate(self.models):
+            probabilities = model.predict_proba(
+                X, batch_size=batch_size, verbose=verbose
+            )
+            predictions[:, :, i] = probabilities
+        avg_predictions = predictions.mean(axis=2)
+        return avg_predictions
+
+    def regenerate_model(self):
+        print("Skip model regeneration - we want to reuse this model.")

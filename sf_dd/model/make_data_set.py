@@ -12,7 +12,6 @@ from gpml.data_set import data_set_maker
 def run(project_dir):
     config = get_config(project_dir)
     extract_transform(config)
-    # split_evaluation_data(config)  # Not enough data for this.
 
 
 def get_config(project_dir):
@@ -26,32 +25,41 @@ def extract_transform(config):
     # 2. Write this DF as a single large HDF5.
     # 3. Normalise images.
 
+    random.seed(1)  # Seed the random rotations
+
     training_image_list = pd.read_csv(config.driver_imgs_list).apply(
         lambda r: os.path.join(r['classname'], r['img']),
         axis=1
     )
     testing_image_list = pd.read_csv(config.sample_submission)['img']
 
-    for image_list, directory, output in [
+    for image_list, image_dir, ds_file, il_file in [
         [
             training_image_list,
             config.image_dirs['train'],
-            config.data_sets['training_images']
+            config.data_sets['training_images'],
+            config.image_lists['training_images']
         ],
         [
             testing_image_list,
             config.image_dirs['test'],
-            config.data_sets['testing_images']
+            config.data_sets['testing_images'],
+            config.image_lists['testing_images']
         ]
     ]:
-        # image_list = image_list[0:9]
+
+        image_list = image_list.sort_values(inplace=False)
+        image_list = image_list.reset_index(drop=True, inplace=False)
+
         images = load_and_transform_images(
-            directory, image_list,
+            image_dir, image_list,
             (config.image_size[1], config.image_size[2]),
             cv2.IMREAD_GRAYSCALE
         )
         images = normalise_images(images)
-        data_set_maker.check_and_save_array_to_hdf(images, output)
+
+        pd.DataFrame({'img': image_list}).to_csv(il_file, index_label='i')
+        data_set_maker.check_and_save_array_to_hdf(images, ds_file)
 
 
 def load_and_transform_images(directory, image_list, image_size, colour_flag):
@@ -66,8 +74,9 @@ def load_and_transform_images(directory, image_list, image_size, colour_flag):
         if image is None:
             raise RuntimeError('Image reading failed: %s' % image_path)
 
-        image = cv2.resize(image, image_size)
         image = random_rotation(image, (-10, 10))
+        image_size_rev = (image_size[1], image_size[0])  # cols, rows
+        image = cv2.resize(image, image_size_rev, cv2.INTER_LINEAR)
 
         if channels == 1:
             # Add an empty dimension to gray scale images
@@ -78,7 +87,7 @@ def load_and_transform_images(directory, image_list, image_size, colour_flag):
 
 
 def random_rotation(image, bounds):
-    rotation = random.uniform(*bounds)
+    rotation = random.uniform(bounds[0], bounds[1])
     rotation_matrix = cv2.getRotationMatrix2D(
         (image.shape[1] / 2, image.shape[0] / 2), rotation, 1
     )
@@ -105,7 +114,8 @@ def normalise_images(images):
     else:
         raise RuntimeError('Image dtype, %s, not supported' % images.dtype)
 
-    images -= int(images.mean())
+    # Skip this while we are trying to match the ZFT model.
+    # images -= images.mean()
     return images
 
 
